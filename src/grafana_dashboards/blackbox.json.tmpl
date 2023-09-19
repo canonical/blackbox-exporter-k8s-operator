@@ -26,7 +26,6 @@
   "fiscalYearStartMonth": 0,
   "gnetId": 16293,
   "graphTooltip": 0,
-  "id": 2,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -131,7 +130,7 @@
             "uid": "${prometheusds}"
           },
           "editorMode": "code",
-          "expr": "sum(probe_http_duration_seconds{probe_target=~\"$probe_target\"}) by (probe_target)",
+          "expr": "sum by(probe_target) (probe_http_duration_seconds{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"})",
           "legendFormat": "{{instance}}",
           "range": true,
           "refId": "A"
@@ -209,7 +208,7 @@
             "uid": "${prometheusds}"
           },
           "editorMode": "code",
-          "expr": "count(probe_success{probe_target=~\"$probe_target\"})",
+          "expr": "count(probe_success{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"})",
           "range": true,
           "refId": "A"
         }
@@ -296,7 +295,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "count(probe_success{probe_target=~\"$probe_target\"} == 0)",
+          "expr": "count(probe_success{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"} == 0)",
           "hide": false,
           "instant": true,
           "range": false,
@@ -581,7 +580,7 @@
             "uid": "${prometheusds}"
           },
           "editorMode": "code",
-          "expr": "probe_http_status_code{probe_target=~\"$probe_target\"}",
+          "expr": "probe_http_status_code{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"}",
           "format": "table",
           "legendFormat": "",
           "range": true,
@@ -593,7 +592,7 @@
             "uid": "${prometheusds}"
           },
           "editorMode": "code",
-          "expr": "probe_ssl_earliest_cert_expiry{probe_target=~\"$probe_target\"} - time()",
+          "expr": "probe_ssl_earliest_cert_expiry{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"} - time()",
           "format": "table",
           "hide": false,
           "range": true,
@@ -605,7 +604,7 @@
             "uid": "${prometheusds}"
           },
           "editorMode": "code",
-          "expr": "probe_ssl_earliest_cert_expiry{probe_target=~\"$probe_target\"} * 1000",
+          "expr": "probe_ssl_earliest_cert_expiry{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"} * 1000",
           "format": "table",
           "hide": false,
           "range": true,
@@ -617,7 +616,7 @@
             "uid": "${prometheusds}"
           },
           "editorMode": "code",
-          "expr": "sum(probe_http_duration_seconds{probe_target=~\"$probe_target\"}) by (probe_target)",
+          "expr": "sum by(probe_target) (probe_http_duration_seconds{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"})",
           "format": "table",
           "hide": false,
           "range": true,
@@ -629,7 +628,7 @@
             "uid": "${prometheusds}"
           },
           "editorMode": "code",
-          "expr": "probe_dns_lookup_time_seconds{probe_target=~\"$probe_target\"}",
+          "expr": "probe_dns_lookup_time_seconds{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"}",
           "format": "table",
           "hide": false,
           "range": true,
@@ -823,7 +822,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "count(probe_success{probe_target=~\"$probe_target\"} == 1)",
+          "expr": "count(probe_success{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"} == 1)",
           "format": "time_series",
           "instant": true,
           "interval": "",
@@ -838,7 +837,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "count(probe_success{probe_target=~\"$probe_target\"} == 0)",
+          "expr": "count(probe_success{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"} == 0)",
           "hide": false,
           "instant": true,
           "legendFormat": "Failed status instance",
@@ -978,7 +977,7 @@
           },
           "editorMode": "code",
           "exemplar": true,
-          "expr": "probe_ssl_earliest_cert_expiry{probe_target=~\"$probe_target\"} - time() < (3600 * 24 * 30)",
+          "expr": "probe_ssl_earliest_cert_expiry{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"} - time() < (3600 * 24 * 30)",
           "format": "table",
           "instant": true,
           "interval": "",
@@ -1082,7 +1081,7 @@
             "uid": "${prometheusds}"
           },
           "editorMode": "code",
-          "expr": "probe_http_status_code{probe_target=~\"$probe_target\"}",
+          "expr": "probe_http_status_code{juju_application=~\"$juju_application\",juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_unit=~\"$juju_unit\",probe_target=~\"$probe_target\"}",
           "legendFormat": "{{probe_target}}",
           "range": true,
           "refId": "A"
@@ -1119,6 +1118,57 @@
       "yaxis": {
         "align": false
       }
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "id": 26,
+      "panels": [],
+      "title": "Blackbox Logs",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "loki",
+        "uid": "P7A1BD7128D5AD5BD"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      },
+      "id": 28,
+      "options": {
+        "dedupStrategy": "none",
+        "enableLogDetails": true,
+        "prettifyLogMessage": false,
+        "showCommonLabels": false,
+        "showLabels": false,
+        "showTime": false,
+        "sortOrder": "Descending",
+        "wrapLogMessage": false
+      },
+      "pluginVersion": "9.2.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "loki",
+            "uid": "P7A1BD7128D5AD5BD"
+          },
+          "editorMode": "builder",
+          "expr": "{filename=\"/var/blackbox.log\"} |= ``",
+          "queryType": "range",
+          "refId": "A"
+        }
+      ],
+      "title": "Panel Title",
+      "type": "logs"
     }
   ],
   "refresh": false,
@@ -1134,13 +1184,164 @@
     "list": [
       {
         "current": {
+          "selected": true,
+          "text": [
+            "juju_blackbox-bugs_a6785eaf-8e66-409f-8028-758699d85002_loki_0"
+          ],
+          "value": [
+            "juju_blackbox-bugs_a6785eaf-8e66-409f-8028-758699d85002_loki_0"
+          ]
+        },
+        "hide": 0,
+        "includeAll": true,
+        "label": "Loki datasource",
+        "multi": true,
+        "name": "lokids",
+        "options": [],
+        "query": "loki",
+        "queryValue": "",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allValue": ".*",
+        "current": {
           "selected": false,
           "text": "All",
           "value": "$__all"
         },
         "datasource": {
+          "uid": "${prometheusds}"
+        },
+        "definition": "label_values(up{juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_application=~\"$juju_application\"},juju_unit)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Juju unit",
+        "multi": true,
+        "name": "juju_unit",
+        "options": [],
+        "query": {
+          "query": "label_values(up{juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\",juju_application=~\"$juju_application\"},juju_unit)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "datasource": {
           "type": "prometheus",
-          "uid": "PA9B40D3050197671"
+          "uid": "${prometheusds}"
+        },
+        "definition": "label_values(up{juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\"},juju_application)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Juju application",
+        "multi": true,
+        "name": "juju_application",
+        "options": [],
+        "query": {
+          "query": "label_values(up{juju_model=~\"$juju_model\",juju_model_uuid=~\"$juju_model_uuid\"},juju_application)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "uid": "${prometheusds}"
+        },
+        "definition": "label_values(up{juju_model=~\"$juju_model\"},juju_model_uuid)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Juju model uuid",
+        "multi": true,
+        "name": "juju_model_uuid",
+        "options": [],
+        "query": {
+          "query": "label_values(up{juju_model=~\"$juju_model\"},juju_model_uuid)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "allValue": ".*",
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "uid": "${prometheusds}"
+        },
+        "definition": "label_values(up,juju_model)",
+        "hide": 0,
+        "includeAll": true,
+        "label": "Juju model",
+        "multi": true,
+        "name": "juju_model",
+        "options": [],
+        "query": {
+          "query": "label_values(up,juju_model)",
+          "refId": "StandardVariableQuery"
+        },
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "sort": 0,
+        "tagValuesQuery": "",
+        "tags": [],
+        "tagsQuery": "",
+        "type": "query",
+        "useTags": false
+      },
+      {
+        "current": {
+          "selected": false,
+          "text": "All",
+          "value": "$__all"
+        },
+        "datasource": {
+          "uid": "${prometheusds}"
         },
         "definition": "label_values(probe_success,probe_target)",
         "hide": 0,
@@ -1161,8 +1362,8 @@
       {
         "current": {
           "selected": false,
-          "text": "juju_blackbox-dev_c57f00db-7c20-4935-803e-316d63f8103e_prometheus_0",
-          "value": "juju_blackbox-dev_c57f00db-7c20-4935-803e-316d63f8103e_prometheus_0"
+          "text": "juju_blackbox-bugs_a6785eaf-8e66-409f-8028-758699d85002_prometheus_0",
+          "value": "juju_blackbox-bugs_a6785eaf-8e66-409f-8028-758699d85002_prometheus_0"
         },
         "hide": 0,
         "includeAll": false,
@@ -1188,6 +1389,6 @@
   "timezone": "",
   "title": "Blackbox Exporter",
   "uid": "ab09rj0r",
-  "version": 3,
+  "version": 1,
   "weekStart": ""
 }

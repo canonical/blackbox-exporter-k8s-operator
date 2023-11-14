@@ -54,7 +54,7 @@ juju status --relations --storage --color
 
 In order to configure the Blackbox Exporter, a [configuration file](https://github.com/prometheus/blackbox_exporter/blob/master/CONFIGURATION.md)
 should be provided using the
-[`config_file`](https://charmhub.io/blackbox-exporter-k8s/conigure#config_file) option:
+[`config_file`](https://charmhub.io/blackbox-exporter-k8s/configure#config_file) option:
 
 ```shell
 juju config blackbox-exporter-k8s \

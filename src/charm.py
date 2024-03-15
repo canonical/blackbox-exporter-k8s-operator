@@ -107,10 +107,7 @@ class BlackboxExporterCharm(CharmBase):
             ],
         )
         self._grafana_dashboard_provider = GrafanaDashboardProvider(charm=self)
-        self._log_forwarding = LogForwarder(
-            self,
-            relation_name="logging"
-        )
+        self._log_forwarding = LogForwarder(self, relation_name="logging")
 
         self.framework.observe(self.ingress.on.ready, self._handle_ingress)
         self.framework.observe(self.ingress.on.revoked, self._handle_ingress)

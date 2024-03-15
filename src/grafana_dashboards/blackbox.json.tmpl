@@ -200,7 +200,7 @@
         },
         "textMode": "auto"
       },
-      "pluginVersion": "9.2.1",
+      "pluginVersion": "9.5.3",
       "targets": [
         {
           "datasource": {
@@ -286,7 +286,7 @@
         "text": {},
         "textMode": "auto"
       },
-      "pluginVersion": "9.2.1",
+      "pluginVersion": "9.5.3",
       "targets": [
         {
           "datasource": {
@@ -317,7 +317,9 @@
           },
           "custom": {
             "align": "auto",
-            "displayMode": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
             "inspect": false
           },
           "mappings": [],
@@ -339,8 +341,11 @@
             },
             "properties": [
               {
-                "id": "custom.displayMode",
-                "value": "color-background-solid"
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
               },
               {
                 "id": "thresholds",
@@ -427,8 +432,11 @@
                 }
               },
               {
-                "id": "custom.displayMode",
-                "value": "color-background-solid"
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
               }
             ]
           },
@@ -447,8 +455,11 @@
                 "value": "Not HTTPS protocol"
               },
               {
-                "id": "custom.displayMode",
-                "value": "color-background-solid"
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
               },
               {
                 "id": "thresholds",
@@ -487,8 +498,11 @@
                 "value": 6
               },
               {
-                "id": "custom.displayMode",
-                "value": "color-background-solid"
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
               },
               {
                 "id": "thresholds",
@@ -527,8 +541,11 @@
                 "value": 121
               },
               {
-                "id": "custom.displayMode",
-                "value": "color-background-solid"
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
               },
               {
                 "id": "thresholds",
@@ -562,7 +579,9 @@
       },
       "id": 8,
       "options": {
+        "cellHeight": "sm",
         "footer": {
+          "countRows": false,
           "fields": "",
           "reducer": [
             "sum"
@@ -572,7 +591,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "9.2.1",
+      "pluginVersion": "9.5.3",
       "targets": [
         {
           "datasource": {
@@ -873,7 +892,9 @@
           },
           "custom": {
             "align": "auto",
-            "displayMode": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
             "filterable": false,
             "inspect": false
           },
@@ -919,8 +940,11 @@
                 "value": 160
               },
               {
-                "id": "custom.displayMode",
-                "value": "color-background-solid"
+                "id": "custom.cellOptions",
+                "value": {
+                  "mode": "basic",
+                  "type": "color-background"
+                }
               },
               {
                 "id": "thresholds",
@@ -958,7 +982,9 @@
       },
       "id": 20,
       "options": {
+        "cellHeight": "sm",
         "footer": {
+          "countRows": false,
           "fields": "",
           "reducer": [
             "sum"
@@ -968,7 +994,7 @@
         "showHeader": true,
         "sortBy": []
       },
-      "pluginVersion": "9.2.1",
+      "pluginVersion": "9.5.3",
       "targets": [
         {
           "datasource": {
@@ -992,8 +1018,8 @@
           "options": {
             "include": {
               "names": [
-                "instance",
-                "Value"
+                "Value",
+                "probe_target"
               ]
             }
           }
@@ -1003,15 +1029,13 @@
           "options": {
             "excludeByName": {},
             "indexByName": {
-              "Value": 4,
-              "desc": 1,
-              "env": 2,
-              "instance": 3,
-              "project": 0
+              "Value": 1,
+              "probe_target": 0
             },
             "renameByName": {
               "Value": "Certificate Validity",
-              "instance": " Instance Address"
+              "instance": " Instance Address",
+              "probe_target": "Target"
             }
           }
         }
@@ -1066,7 +1090,7 @@
         "alertThreshold": true
       },
       "percentage": false,
-      "pluginVersion": "9.2.1",
+      "pluginVersion": "9.5.3",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -1135,7 +1159,7 @@
     {
       "datasource": {
         "type": "loki",
-        "uid": "P7A1BD7128D5AD5BD"
+        "uid": "${lokids}"
       },
       "gridPos": {
         "h": 7,
@@ -1159,10 +1183,10 @@
         {
           "datasource": {
             "type": "loki",
-            "uid": "P7A1BD7128D5AD5BD"
+            "uid": "${lokids}"
           },
           "editorMode": "builder",
-          "expr": "{filename=\"/var/blackbox.log\"} |= ``",
+          "expr": "{pebble_service=\"blackbox\", juju_application=~\"$juju_application\", juju_model=~\"$juju_model\", juju_model_uuid=~\"$juju_model_uuid\", juju_unit=~\"$juju_unit\"} |= ``",
           "queryType": "range",
           "refId": "A"
         }
@@ -1171,8 +1195,8 @@
       "type": "logs"
     }
   ],
-  "refresh": false,
-  "schemaVersion": 37,
+  "refresh": "",
+  "schemaVersion": 38,
   "style": "dark",
   "tags": [
     "http/https",
@@ -1186,10 +1210,10 @@
         "current": {
           "selected": true,
           "text": [
-            "juju_blackbox-bugs_a6785eaf-8e66-409f-8028-758699d85002_loki_0"
+            "juju_blackbox-bugs_e7f303fd-3bb4-4e5b-848e-97c80138b458_loki_0"
           ],
           "value": [
-            "juju_blackbox-bugs_a6785eaf-8e66-409f-8028-758699d85002_loki_0"
+            "juju_blackbox-bugs_e7f303fd-3bb4-4e5b-848e-97c80138b458_loki_0"
           ]
         },
         "hide": 0,
@@ -1275,9 +1299,13 @@
       {
         "allValue": ".*",
         "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
         },
         "datasource": {
           "uid": "${prometheusds}"
@@ -1362,8 +1390,8 @@
       {
         "current": {
           "selected": false,
-          "text": "juju_blackbox-bugs_a6785eaf-8e66-409f-8028-758699d85002_prometheus_0",
-          "value": "juju_blackbox-bugs_a6785eaf-8e66-409f-8028-758699d85002_prometheus_0"
+          "text": "juju_blackbox-bugs_e7f303fd-3bb4-4e5b-848e-97c80138b458_prometheus_0",
+          "value": "juju_blackbox-bugs_e7f303fd-3bb4-4e5b-848e-97c80138b458_prometheus_0"
         },
         "hide": 0,
         "includeAll": false,

@@ -12,7 +12,7 @@ import yaml
 from blackbox import ConfigUpdateFailure, WorkloadManager
 from charms.catalogue_k8s.v0.catalogue import CatalogueConsumer, CatalogueItem
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
-from charms.loki_k8s.v0.loki_push_api import LogProxyConsumer
+from charms.loki_k8s.v1.loki_push_api import LogForwarder
 from charms.observability_libs.v0.kubernetes_compute_resources_patch import (
     K8sResourcePatchFailedEvent,
     KubernetesComputeResourcesPatch,
@@ -107,12 +107,9 @@ class BlackboxExporterCharm(CharmBase):
             ],
         )
         self._grafana_dashboard_provider = GrafanaDashboardProvider(charm=self)
-        self._log_proxy = LogProxyConsumer(
-            charm=self,
-            relation_name="logging",
-            log_files=[self._log_path],
-            container_name=self._container_name,
-            enable_syslog=False,
+        self._log_forwarding = LogForwarder(
+            self,
+            relation_name="logging"
         )
 
         self.framework.observe(self.ingress.on.ready, self._handle_ingress)

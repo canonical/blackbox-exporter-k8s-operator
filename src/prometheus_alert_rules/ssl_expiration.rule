@@ -2,7 +2,7 @@ groups:
 - name: blackbox-exporter-ssl-expiring-soon
   rules:
   - alert: BlackboxExporterSSLCertExpiringSoon
-    expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
+    expr: probe_ssl_earliest_cert_expiry{} - time() < 86400 * 30
     for: 5m
     labels:
       severity: warning

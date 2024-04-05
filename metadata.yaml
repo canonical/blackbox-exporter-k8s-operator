@@ -4,6 +4,8 @@
 name: blackbox-exporter-k8s
 assumes:
   - k8s-api
+  # Juju >= 3.4 needed for Pebble log forwarding
+  - juju >= 3.4
 
 summary: |
   Kubernetes charm for Blackbox Exporter.

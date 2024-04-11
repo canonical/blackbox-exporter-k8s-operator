@@ -10,7 +10,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Optional
+from typing import Optional, cast
 
 import yaml
 from ops.framework import Object
@@ -156,7 +156,7 @@ class WorkloadManager(Object):
         if not self.is_ready:
             raise ContainerNotReady("cannot update config")
         logger.debug("applying config changes")
-        config = self.model.config.get("config_file")
+        config = cast(Optional[str], self.model.config.get("config_file"))
         # Basic config validation: valid yaml
         if config:
             try:

@@ -50,7 +50,7 @@ class BlackboxExporterCharm(CharmBase):
         super().__init__(*args)
 
         self.container = self.unit.get_container(self._container_name)
-        self.unit.open_port(protocol="tcp", port=self._port)
+        self.unit.set_ports(self._port)
         self.ingress = IngressPerAppRequirer(
             self,
             port=self._port,

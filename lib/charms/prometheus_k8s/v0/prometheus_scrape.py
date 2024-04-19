@@ -362,7 +362,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 45
+LIBPATCH = 44
 
 PYDEPS = ["cosl"]
 
@@ -1537,11 +1537,12 @@ class MetricsEndpointProvider(Object):
             relation.data[self._charm.app]["scrape_metadata"] = json.dumps(self._scrape_metadata)
             relation.data[self._charm.app]["scrape_jobs"] = json.dumps(self._scrape_jobs)
 
-            # Update relation data with the string representation of the rule file.
-            # Juju topology is already included in the "scrape_metadata" field above.
-            # The consumer side of the relation uses this information to name the rules file
-            # that is written to the filesystem.
-            relation.data[self._charm.app]["alert_rules"] = json.dumps(alert_rules_as_dict)
+            if alert_rules_as_dict:
+                # Update relation data with the string representation of the rule file.
+                # Juju topology is already included in the "scrape_metadata" field above.
+                # The consumer side of the relation uses this information to name the rules file
+                # that is written to the filesystem.
+                relation.data[self._charm.app]["alert_rules"] = json.dumps(alert_rules_as_dict)
 
     def _set_unit_ip(self, _=None):
         """Set unit host address.

@@ -10,7 +10,7 @@ from urllib.parse import urlparse
 
 import yaml
 from blackbox import ConfigUpdateFailure, WorkloadManager
-from charms.catalogue_k8s.v0.catalogue import CatalogueConsumer, CatalogueItem
+from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v1.loki_push_api import LogForwarder
 from charms.observability_libs.v0.kubernetes_compute_resources_patch import (
@@ -114,14 +114,10 @@ class BlackboxExporterCharm(CharmBase):
         self.framework.observe(self.ingress.on.revoked, self._handle_ingress)
         self.catalog = CatalogueConsumer(
             charm=self,
-            refresh_event=[
-                self.on.update_status,
-                self.on.config_changed,  # also covers upgrade-charm
-            ],
             item=CatalogueItem(
                 name="Blackbox Exporter",
-                icon="box",
                 url=self._external_url,
+                icon="box-variant",
                 description=(
                     "Blackbox exporter allows blackbox probing of endpoints over a multitude of "
                     "protocols, including HTTP, HTTPS, DNS, TCP, ICMP and gRPC."

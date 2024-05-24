@@ -490,13 +490,14 @@ from io import BytesIO
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 from urllib import request
-from urllib.error import HTTPError
+from urllib.error import URLError
 
 import yaml
 from cosl import JujuTopology
 from ops.charm import (
     CharmBase,
     HookEvent,
+    PebbleReadyEvent,
     RelationBrokenEvent,
     RelationCreatedEvent,
     RelationDepartedEvent,
@@ -518,7 +519,9 @@ LIBAPI = 1
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 5
+LIBPATCH = 9
+
+PYDEPS = ["cosl"]
 
 logger = logging.getLogger(__name__)
 
@@ -531,12 +534,17 @@ PROMTAIL_BASE_URL = "https://github.com/canonical/loki-k8s-operator/releases/dow
 # To update Promtail version you only need to change the PROMTAIL_VERSION and
 # update all sha256 sums in PROMTAIL_BINARIES. To support a new architecture
 # you only need to add a new key value pair for the architecture in PROMTAIL_BINARIES.
-PROMTAIL_VERSION = "v2.5.0"
+PROMTAIL_VERSION = "v2.9.7"
 PROMTAIL_BINARIES = {
     "amd64": {
         "filename": "promtail-static-amd64",
-        "zipsha": "543e333b0184e14015a42c3c9e9e66d2464aaa66eca48b29e185a6a18f67ab6d",
-        "binsha": "17e2e271e65f793a9fbe81eab887b941e9d680abe82d5a0602888c50f5e0cac9",
+        "zipsha": "6873cbdabf23062aeefed6de5f00ff382710332af3ab90a48c253ea17e08f465",
+        "binsha": "28da9b99f81296fe297831f3bc9d92aea43b4a92826b8ff04ba433b8cb92fb50",
+    },
+    "arm64": {
+        "filename": "promtail-static-arm64",
+        "zipsha": "c083fdb45e5c794103f974eeb426489b4142438d9e10d0ae272b2aff886e249b",
+        "binsha": "4cd055c477a301c0bdfdbcea514e6e93f6df5d57425ce10ffc77f3e16fec1ddf",
     },
 }
 
@@ -1828,7 +1836,12 @@ class LogProxyConsumer(ConsumerBase):
 
         # architecture used for promtail binary
         arch = platform.processor()
-        self._arch = "amd64" if arch == "x86_64" else arch
+        if arch in ["x86_64", "amd64"]:
+            self._arch = "amd64"
+        elif arch in ["aarch64", "arm64", "armv8b", "armv8l"]:
+            self._arch = "arm64"
+        else:
+            self._arch = arch
 
         events = self._charm.on[relation_name]
         self.framework.observe(events.relation_created, self._on_relation_created)
@@ -2325,7 +2338,7 @@ class LogProxyConsumer(ConsumerBase):
 
         try:
             self._obtain_promtail(promtail_binaries[self._arch], container)
-        except HTTPError as e:
+        except URLError as e:
             msg = f"Promtail binary couldn't be downloaded - {str(e)}"
             logger.warning(msg)
             self.on.promtail_digest_error.emit(msg)
@@ -2486,7 +2499,10 @@ class _PebbleLogClient:
 
 
 class LogForwarder(ConsumerBase):
-    """Forward the standard outputs of all workloads operated by a charm to one or multiple Loki endpoints."""
+    """Forward the standard outputs of all workloads operated by a charm to one or multiple Loki endpoints.
+
+    This class implements Pebble log forwarding. Juju >= 3.4 is needed.
+    """
 
     def __init__(
         self,
@@ -2510,27 +2526,47 @@ class LogForwarder(ConsumerBase):
         self.framework.observe(on.relation_departed, self._update_logging)
         self.framework.observe(on.relation_broken, self._update_logging)
 
+        for container_name in self._charm.meta.containers.keys():
+            snake_case_container_name = container_name.replace("-", "_")
+            self.framework.observe(
+                getattr(self._charm.on, f"{snake_case_container_name}_pebble_ready"),
+                self._on_pebble_ready,
+            )
+
+    def _on_pebble_ready(self, event: PebbleReadyEvent):
+        if not (loki_endpoints := self._retrieve_endpoints_from_relation()):
+            logger.warning("No Loki endpoints available")
+            return
+
+        self._update_endpoints(event.workload, loki_endpoints)
+
     def _update_logging(self, _):
         """Update the log forwarding to match the active Loki endpoints."""
+        if not (loki_endpoints := self._retrieve_endpoints_from_relation()):
+            logger.warning("No Loki endpoints available")
+            return
+
+        for container in self._charm.unit.containers.values():
+            self._update_endpoints(container, loki_endpoints)
+
+    def _retrieve_endpoints_from_relation(self) -> dict:
         loki_endpoints = {}
 
         # Get the endpoints from relation data
         for relation in self._charm.model.relations[self._relation_name]:
             loki_endpoints.update(self._fetch_endpoints(relation))
 
-        if not loki_endpoints:
-            logger.warning("No Loki endpoints available")
-            return
+        return loki_endpoints
 
-        for container in self._charm.unit.containers.values():
-            _PebbleLogClient.disable_inactive_endpoints(
-                container=container,
-                active_endpoints=loki_endpoints,
-                topology=self.topology,
-            )
-            _PebbleLogClient.enable_endpoints(
-                container=container, active_endpoints=loki_endpoints, topology=self.topology
-            )
+    def _update_endpoints(self, container: Container, loki_endpoints: dict):
+        _PebbleLogClient.disable_inactive_endpoints(
+            container=container,
+            active_endpoints=loki_endpoints,
+            topology=self.topology,
+        )
+        _PebbleLogClient.enable_endpoints(
+            container=container, active_endpoints=loki_endpoints, topology=self.topology
+        )
 
     def is_ready(self, relation: Optional[Relation] = None):
         """Check if the relation is active and healthy."""

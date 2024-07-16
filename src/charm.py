@@ -244,7 +244,7 @@ class BlackboxExporterCharm(CharmBase):
                 probe["relabel_configs"] = [
                     {"source_labels": ["__address__"], "target_label": "__param_target"},
                     {"source_labels": ["__param_target"], "target_label": "instance"},
-                    # Copy the scrape job target to an extra label for dahsboard usage
+                    # Copy the scrape job target to an extra label for dashboard usage
                     {"source_labels": ["__param_target"], "target_label": "probe_target"},
                     # Set the address to scrape to the blackbox exporter url
                     {

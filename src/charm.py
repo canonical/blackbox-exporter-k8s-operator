@@ -65,7 +65,7 @@ class BlackboxExporterCharm(CharmBase):
             self,
             container_name=self._container_name,
             port=self._port,
-            web_external_url=self._external_url,
+            web_external_url=self._internal_url,
             config_path=self._config_path,
             log_path=self._log_path,
         )

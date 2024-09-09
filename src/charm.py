@@ -65,7 +65,7 @@ class BlackboxExporterCharm(CharmBase):
             self,
             container_name=self._container_name,
             port=self._port,
-            web_external_url=self._internal_url,
+            web_external_url='',
             config_path=self._config_path,
             log_path=self._log_path,
         )
@@ -117,7 +117,7 @@ class BlackboxExporterCharm(CharmBase):
             charm=self,
             item=CatalogueItem(
                 name="Blackbox Exporter",
-                url=self._external_url,
+                url=self._external_url + "/",
                 icon="box-variant",
                 description=(
                     "Blackbox exporter allows blackbox probing of endpoints over a multitude of "

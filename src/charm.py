@@ -219,8 +219,9 @@ class BlackboxExporterCharm(CharmBase):
         """The self-monitoring scrape job."""
         external_url = urlparse(self._external_url)
         metrics_path = f"{external_url.path.rstrip('/')}/metrics"
+        internal_url = self._internal_url.replace("http://", "")
         target = (
-            f"{external_url.hostname}{':'+str(external_url.port) if external_url.port else ''}"
+            f"{internal_url}"
         )
         job = {
             "metrics_path": metrics_path,
@@ -250,7 +251,7 @@ class BlackboxExporterCharm(CharmBase):
                     # Set the address to scrape to the blackbox exporter url
                     {
                         "target_label": "__address__",
-                        "replacement": self._external_url.replace("http://", ""),
+                        "replacement": self._internal_url.replace("http://", ""),
                     },
                 ]
                 jobs.append(probe)

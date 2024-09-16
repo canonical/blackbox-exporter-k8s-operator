@@ -10,7 +10,6 @@ from typing import cast
 from urllib.parse import urlparse
 
 import yaml
-from blackbox import ConfigUpdateFailure, WorkloadManager
 from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v1.loki_push_api import LogForwarder
@@ -31,6 +30,8 @@ from ops.model import (
     WaitingStatus,
 )
 from ops.pebble import PathError, ProtocolError
+
+from blackbox import ConfigUpdateFailure, WorkloadManager
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ class BlackboxExporterCharm(CharmBase):
             self,
             container_name=self._container_name,
             port=self._port,
-            web_external_url='',
+            web_external_url="",
             config_path=self._config_path,
             log_path=self._log_path,
         )
@@ -220,9 +221,7 @@ class BlackboxExporterCharm(CharmBase):
         external_url = urlparse(self._external_url)
         metrics_path = f"{external_url.path.rstrip('/')}/metrics"
         internal_url = self._internal_url.replace("http://", "")
-        target = (
-            f"{internal_url}"
-        )
+        target = f"{internal_url}"
         job = {
             "metrics_path": metrics_path,
             "static_configs": [{"targets": [target]}],

@@ -10,3 +10,5 @@ jobs:
     name: PR
     uses: canonical/observability/.github/workflows/charm-pull-request.yaml@main
     secrets: inherit
+    with:
+      charmcraft-channel: "3.x/stable"

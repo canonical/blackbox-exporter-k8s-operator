@@ -7,11 +7,12 @@ from unittest.mock import patch
 
 import ops
 import yaml
-from blackbox import BlackboxExporterApi, WorkloadManager
-from charm import BlackboxExporterCharm
 from helpers import k8s_resource_multipatch, tautology
 from ops.model import ActiveStatus, BlockedStatus
 from ops.testing import Harness
+
+from blackbox import BlackboxExporterApi, WorkloadManager
+from charm import BlackboxExporterCharm
 
 ops.testing.SIMULATE_CAN_CONNECT = True
 

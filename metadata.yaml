@@ -47,3 +47,5 @@ requires:
     limit: 1
   catalogue:
     interface: catalogue
+  blackbox-probes:
+    interface: blackbox_probes

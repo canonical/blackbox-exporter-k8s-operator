@@ -10,7 +10,6 @@ from typing import cast
 from urllib.parse import urlparse
 
 import yaml
-from blackbox import ConfigUpdateFailure, WorkloadManager
 from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v1.loki_push_api import LogForwarder
@@ -31,6 +30,8 @@ from ops.model import (
     WaitingStatus,
 )
 from ops.pebble import PathError, ProtocolError
+
+from blackbox import ConfigUpdateFailure, WorkloadManager
 
 logger = logging.getLogger(__name__)
 

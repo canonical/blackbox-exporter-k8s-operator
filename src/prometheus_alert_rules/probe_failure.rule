@@ -2,8 +2,8 @@ groups:
   - name: probes
     rules:
     - alert: ProbeFailed
-      expr: avg_over_time(probe_success{}[10m]) < 0.5
-      for: 0m
+      expr: probe_success{} < 1
+      for: 5m
       labels:
         severity: critical
       annotations:

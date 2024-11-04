@@ -220,8 +220,9 @@ class BlackboxExporterCharm(CharmBase):
         """The self-monitoring scrape job."""
         external_url = urlparse(self._external_url)
         metrics_path = f"{external_url.path.rstrip('/')}/metrics"
-        internal_url = self._internal_url.replace("http://", "")
-        target = f"{internal_url}"
+        target = (
+            f"{external_url.hostname}{':'+str(external_url.port) if external_url.port else ''}"
+        )
         job = {
             "metrics_path": metrics_path,
             "static_configs": [{"targets": [target]}],
@@ -234,7 +235,7 @@ class BlackboxExporterCharm(CharmBase):
         """The scraping jobs to execute probes from Prometheus."""
         jobs = []
         external_url = urlparse(self._external_url)
-        f"{external_url.path.rstrip('/')}/probe"
+        probes_path =  f"{external_url.path.rstrip('/')}/probe"
         probes_scrape_jobs = cast(str, self.model.config.get("probes_file"))
         if probes_scrape_jobs:
             probes = yaml.safe_load(probes_scrape_jobs)
@@ -242,6 +243,7 @@ class BlackboxExporterCharm(CharmBase):
             for probe in probes["scrape_configs"]:
                 # The relabel configs come from the official Blackbox Exporter docs; please refer
                 # to that for further information on what they do
+                probe["metrics_path"] = probes_path
                 probe["relabel_configs"] = [
                     {"source_labels": ["__address__"], "target_label": "__param_target"},
                     {"source_labels": ["__param_target"], "target_label": "instance"},
@@ -250,7 +252,7 @@ class BlackboxExporterCharm(CharmBase):
                     # Set the address to scrape to the blackbox exporter url
                     {
                         "target_label": "__address__",
-                        "replacement": self._internal_url.replace("http://", ""),
+                        "replacement": f"{external_url.hostname}",
                     },
                 ]
                 jobs.append(probe)

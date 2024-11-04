@@ -235,7 +235,7 @@ class BlackboxExporterCharm(CharmBase):
         """The scraping jobs to execute probes from Prometheus."""
         jobs = []
         external_url = urlparse(self._external_url)
-        probes_path =  f"{external_url.path.rstrip('/')}/probe"
+        probes_path = f"{external_url.path.rstrip('/')}/probe"
         probes_scrape_jobs = cast(str, self.model.config.get("probes_file"))
         if probes_scrape_jobs:
             probes = yaml.safe_load(probes_scrape_jobs)

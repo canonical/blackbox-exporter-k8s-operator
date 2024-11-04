@@ -11,4 +11,5 @@ bases:
       channel: "22.04"
 parts:
   charm:
+    build-packages: [cargo, rustc, pkg-config, libffi-dev, libssl-dev]
     charm-binary-python-packages: [ops, PyYAML, cryptography, jsonschema, pydantic-core]

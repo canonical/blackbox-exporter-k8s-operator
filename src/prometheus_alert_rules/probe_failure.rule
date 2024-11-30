@@ -1,0 +1,13 @@
+groups:
+  - name: probes
+    rules:
+    - alert: ProbeFailed
+      expr: probe_success{} < 1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Blackbox Exporter target {{ $labels.probe_target }} has failed for at least 50% of the time over the last ten minutes
+        description: >
+          Blackbox Exporter target {{ $labels.probe_target }} has failed for at least 50% of the time over the last ten minutes
+          LABELS = {{ $labels }}

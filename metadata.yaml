@@ -47,3 +47,7 @@ requires:
     limit: 1
   catalogue:
     interface: catalogue
+  probes:
+    interface: blackbox_exporter_probes
+    description: |
+          Receive a list of probes (server address and probing method) from the provider to query.

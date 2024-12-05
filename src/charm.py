@@ -6,10 +6,11 @@
 
 import logging
 import socket
-from typing import cast
+from typing import List, cast
 from urllib.parse import urlparse
 
 import yaml
+from charms.blackbox_k8s.v0.blackbox_probes import BlackboxProbesRequirer, ProbesJobModel
 from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v1.loki_push_api import LogForwarder
@@ -99,6 +100,15 @@ class BlackboxExporterCharm(CharmBase):
             self._on_k8s_patch_failed,
         )
 
+        self._probes_requirer = BlackboxProbesRequirer(
+            charm=self,
+            relation_name="probes",
+        )
+
+        self.framework.observe(
+            self._probes_requirer.on.targets_changed, self._on_probes_modules_config_changed
+        )
+
         # - Self monitoring and probes
         self._scraping = MetricsEndpointProvider(
             self,
@@ -107,6 +117,7 @@ class BlackboxExporterCharm(CharmBase):
             refresh_event=[
                 self.on.config_changed,
                 self.on.update_status,
+                self._probes_requirer.on.targets_changed,
             ],
         )
         self._grafana_dashboard_provider = GrafanaDashboardProvider(charm=self)
@@ -114,6 +125,7 @@ class BlackboxExporterCharm(CharmBase):
 
         self.framework.observe(self.ingress.on.ready, self._handle_ingress)
         self.framework.observe(self.ingress.on.revoked, self._handle_ingress)
+
         self.catalog = CatalogueConsumer(
             charm=self,
             item=CatalogueItem(
@@ -190,6 +202,9 @@ class BlackboxExporterCharm(CharmBase):
         # Update config file
         try:
             self.blackbox_workload.update_config()
+            self._update_blackbox_config_yaml_given_dict_from_relation(
+                self._probes_requirer.modules()
+            )
         except ConfigUpdateFailure as e:
             self.unit.status = BlockedStatus(str(e))
             return
@@ -230,33 +245,100 @@ class BlackboxExporterCharm(CharmBase):
 
         return [job]
 
+    def _update_blackbox_config_yaml_given_dict_from_relation(self, modules: dict) -> None:
+        """Update the blackbox config yaml given a dict of modules defined in relation.
+
+        This function takes the dict of modules from the BlackboxExporterRequirer and
+        updates the config file with the required modules, only if they do not exist already
+        in the config file.
+
+        Raises:
+            yaml.YAMLError: If there is an error in the YAML formatting or parsing.
+            TypeError: If type is not a string, as `yaml.safe_load` requires a string input.
+        """
+        if not modules:
+            return
+
+        config_file_data = self.container.pull(self._config_path).read()
+
+        if not config_file_data:
+            return
+
+        config_data = yaml.safe_load(config_file_data)
+
+        if "modules" not in config_data:
+            config_data["modules"] = {}
+
+        for module_name, module_data in modules.items():
+            # Add modules from relation data only if they do not exist in the config file
+            if module_name not in config_data["modules"]:
+                config_data["modules"][module_name] = module_data
+
+        updated_config_data = yaml.safe_dump(config_data)
+        self.container.push(self._config_path, updated_config_data)
+        self.blackbox_workload.reload()
+
+    def _merge_scrape_configs(
+        self, file_probes: dict, relation_probes: List[ProbesJobModel]
+    ) -> List[dict]:
+        """Merge the scrape_configs from both file and relation.
+
+        Args:
+            file_probes: data parsed from the "probes_file" configuration, loaded as a dictionary.
+                Defaults to an empty dictionary if no valid YAML or config entry is found.
+            relation_probes: a list of dicts probes extracted from a relation.
+
+        Returns:
+            A list of dicts representing the merged probes from both file and relation data.
+        """
+        merged_scrape_configs = {
+            probe["job_name"]: probe for probe in file_probes.get("scrape_configs", [])
+        }
+
+        for probe in relation_probes:
+            ## convert probes from pydantic type to dict
+            if not isinstance(probe, dict):
+                probe = dict(probe)
+            job_name = probe["job_name"]
+            merged_scrape_configs[job_name] = probe
+        return list(merged_scrape_configs.values())
+
     @property
     def probes_scraping_jobs(self):
         """The scraping jobs to execute probes from Prometheus."""
         jobs = []
         external_url = urlparse(self._external_url)
         probes_path = f"{external_url.path.rstrip('/')}/probe"
-        probes_scrape_jobs = cast(str, self.model.config.get("probes_file"))
-        if probes_scrape_jobs:
-            probes = yaml.safe_load(probes_scrape_jobs)
-            # Add the Blackbox Exporter's `relabel_configs` to each job
-            for probe in probes["scrape_configs"]:
-                # The relabel configs come from the official Blackbox Exporter docs; please refer
-                # to that for further information on what they do
-                probe["metrics_path"] = probes_path
-                probe["relabel_configs"] = [
-                    {"source_labels": ["__address__"], "target_label": "__param_target"},
-                    {"source_labels": ["__param_target"], "target_label": "instance"},
-                    # Copy the scrape job target to an extra label for dashboard usage
-                    {"source_labels": ["__param_target"], "target_label": "probe_target"},
-                    # Set the address to scrape to the blackbox exporter url
-                    {
-                        "target_label": "__address__",
-                        "replacement": f"{external_url.hostname}",
-                    },
-                ]
-                jobs.append(probe)
 
+        # get probes from file and relation
+        file_probes_scrape_jobs = cast(str, self.model.config.get("probes_file"))
+        relation_probes_scrape_jobs = self._probes_requirer.probes()
+        # load relation and file probes as yaml if they exist and merge them
+        file_probes_scrape_jobs = (
+            yaml.safe_load(file_probes_scrape_jobs) if file_probes_scrape_jobs else {}
+        )
+        merged_scrape_configs = self._merge_scrape_configs(
+            file_probes_scrape_jobs, relation_probes_scrape_jobs
+        )
+
+        # Add the Blackbox Exporter's `relabel_configs` to each job
+        for probe in merged_scrape_configs:
+            external_url = urlparse(self._external_url)
+            probe["metrics_path"] = probes_path
+            # The relabel configs come from the official Blackbox Exporter docs; please refer
+            # to that for further information on what they do
+            probe["relabel_configs"] = [
+                {"source_labels": ["__address__"], "target_label": "__param_target"},
+                {"source_labels": ["__param_target"], "target_label": "instance"},
+                # Copy the scrape job target to an extra label for dashboard usage
+                {"source_labels": ["__param_target"], "target_label": "probe_target"},
+                # Set the address to scrape to the blackbox exporter url
+                {
+                    "target_label": "__address__",
+                    "replacement": f"{external_url.hostname}",
+                },
+            ]
+            jobs.append(probe)
         return jobs
 
     def _on_pebble_ready(self, _):
@@ -275,6 +357,10 @@ class BlackboxExporterCharm(CharmBase):
         """Event handler for replica's UpgradeCharmEvent."""
         # After upgrade (refresh), the unit ip address is not guaranteed to remain the same, and
         # the config may need update. Calling the common hook to update.
+        self._common_exit_hook()
+
+    def _on_probes_modules_config_changed(self, _):
+        """Event handler for probes target changed."""
         self._common_exit_hook()
 
 

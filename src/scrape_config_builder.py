@@ -25,6 +25,10 @@ class ScrapeConfigBuilder:
     ) -> List[Dict[str, Any]]:
         """Merge the scrape_configs from both file and relation.
 
+        The relation probes are hashed to ensure uniquess in the blackbox_probes.py library.
+        However, in case of same `job_name` the relation probe takes precedence,
+        overriding the corresponding file probe.
+
         Args:
             file_probes: data parsed from the "probes_file" configuration, loaded as a dictionary.
                 Defaults to an empty dictionary if no valid YAML or config entry is found.

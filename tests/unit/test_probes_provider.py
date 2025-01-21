@@ -89,28 +89,31 @@ class BlackboxProbesProviderTest(unittest.TestCase):
         self.harness.set_model_name("MyUUID")
         self.addCleanup(self.harness.cleanup)
         self.harness.set_leader(True)
-        self.harness.begin()
+        self.harness.begin_with_initial_hooks()
 
     def test_provider_sets_scrape_metadata(self):
+        # GIVEN a charm with a Blackbox Probes provider
         rel_id = self.harness.add_relation(RELATION_NAME, "provider")
         self.harness.add_relation_unit(rel_id, "provider/0")
 
+        # WHEN the provider sets the probe specification
         self.harness.charm.provider._set_probes_spec()
 
+        # THEN the scrape metadata is added to the relation data
         data = self.harness.get_relation_data(rel_id, self.harness.model.app.name)
-        self.assertIn("scrape_metadata", data)
-        scrape_metadata = data["scrape_metadata"]
-        self.assertIn("model", scrape_metadata)
-        self.assertIn("model_uuid", scrape_metadata)
-        self.assertIn("application", scrape_metadata)
-        self.assertIn("unit", scrape_metadata)
+        scrape_metadata = json.loads(data["scrape_metadata"])
+        mandatory_keys = {"model", "unit", "model_uuid", "application"}
+        self.assertEqual(mandatory_keys, mandatory_keys.intersection(scrape_metadata.keys()))
 
     def test_provider_sets_probes_on_relation_joined(self):
+        # GIVEN a charm with a Blackbox Probes provider
         rel_id = self.harness.add_relation(RELATION_NAME, "provider")
         self.harness.add_relation_unit(rel_id, "provider/0")
 
+        # WHEN the provider sets the probe specification
         self.harness.charm.provider._set_probes_spec()
 
+        # THEN the probes data is added to the relation data
         data = self.harness.get_relation_data(rel_id, self.harness.model.app.name)
         self.assertIn("scrape_probes", data)
         scrape_data = json.loads(data["scrape_probes"])
@@ -118,10 +121,14 @@ class BlackboxProbesProviderTest(unittest.TestCase):
         self.assertEqual(scrape_data[0]["params"]["module"], ["http_2xx"])
 
     def test_provider_sets_modules_with_prefix_on_relation_joined(self):
+        # GIVEN a charm with a Blackbox Probes provider
         rel_id = self.harness.add_relation(RELATION_NAME, "provider")
         self.harness.add_relation_unit(rel_id, "provider/0")
+
+        # WHEN the provider sets the probe specification
         self.harness.charm.provider._set_probes_spec()
 
+        # THEN the probes modules data is added to the relation data
         data = self.harness.get_relation_data(rel_id, self.harness.model.app.name)
         self.assertIn("scrape_modules", data)
         scrape_modules = json.loads(data["scrape_modules"])
@@ -132,11 +139,14 @@ class BlackboxProbesProviderTest(unittest.TestCase):
         self.assertIn(f"{module_name_prefix}http_2xx_longer_timeout", scrape_modules)
 
     def test_provider_prefixes_jobs(self):
+        # GIVEN a charm with a Blackbox Probes provider
         rel_id = self.harness.add_relation(RELATION_NAME, "provider")
         self.harness.add_relation_unit(rel_id, "provider/0")
 
+        # WHEN the provider sets the probe specification
         self.harness.charm.provider._set_probes_spec()
 
+        # THEN the probes are added to the relation data with prefixed metadata
         data = self.harness.get_relation_data(rel_id, self.harness.model.app.name)
         scrape_data = json.loads(data["scrape_probes"])
         topology = JujuTopology.from_dict(json.loads(data["scrape_metadata"]))
@@ -145,11 +155,14 @@ class BlackboxProbesProviderTest(unittest.TestCase):
         self.assertEqual(scrape_data[0]["job_name"], f"{module_name_prefix}my-first-job")
 
     def test_provider_prefixes_modules(self):
+        # GIVEN a charm with a Blackbox Probes provider
         rel_id = self.harness.add_relation(RELATION_NAME, "provider")
         self.harness.add_relation_unit(rel_id, "provider/0")
 
+        # WHEN the provider sets the probe specification
         self.harness.charm.provider._set_probes_spec()
 
+        # THEN the probes modules are added to the relation data with prefixed metadata
         data = self.harness.get_relation_data(rel_id, self.harness.model.app.name)
         scrape_data = json.loads(data["scrape_modules"])
         topology = JujuTopology.from_dict(json.loads(data["scrape_metadata"]))
@@ -160,9 +173,15 @@ class BlackboxProbesProviderTest(unittest.TestCase):
 
     def test_get_active_status(self):
         self.addCleanup(self.harness.cleanup)
+
+        # GIVEN a charm with a Blackbox Probes provider providing valid probes
         rel_id = self.harness.add_relation(RELATION_NAME, "provider")
         self.harness.add_relation_unit(rel_id, "provider/0")
+
+        # WHEN the provider sets the probe specification
         self.harness.charm.provider._set_probes_spec()
+
+        # THEN the status of the charm is set to Active
         status = self.harness.charm.provider.get_status()
         assert status == ActiveStatus()
 
@@ -188,8 +207,14 @@ class BlackboxProbesWrongProviderTest(unittest.TestCase):
 
     def test_get_blocked_status_on_invalid_probe(self):
         self.assertEqual(self.harness.charm._stored.num_events, 0)
+
+        # GIVEN a charm with a Blackbox Probes provider providing invalid probes
         rel_id = self.harness.add_relation(RELATION_NAME, "provider")
         self.harness.add_relation_unit(rel_id, "provider/0")
+
+        # WHEN the provider sets the probe specification
         self.harness.charm.provider._set_probes_spec()
+
+        # THEN the status of the charm is set to Blocked
         status = self.harness.charm.provider.get_status()
         assert status == BlockedStatus("Errors occurred in probe configuration")

@@ -89,7 +89,7 @@ overridden by the charm with the needed labels and the correct Blackbox Exporter
 #### Dynamic Configuration
 
 The list of probes and the list of modules for probing can also be changed dynamically from other charms.
-The charm offers a relation to allow charms to forward custom probe spec to Blackbox Exporter. Those are exported over the probes relation using the blackbox_exporter_probes interface:
+This charm offers a relation to allow charms to forward custom probes spec to Blackbox Exporter. Those are exported over the probes relation using the blackbox_exporter_probes interface:
 
 ```shell
 requires:
@@ -97,7 +97,8 @@ requires:
     interface: blackbox_exporter_probes
 ```
 
-The cusrom probes provided via relation data are merged with the probes defined in a configuration file, same with the modules which are integrated in the blackbox-config file.
+The custom probes provided via relation data are merged with the probes defined in the juju config `probes_file` parameter.
+The modules custom defined modules are instead integrated with the modules defined in the juju config `blackbox-config` parameter.
 In order for the charm defined probes to be probed via this charm all that is required is to relate the two charms with:
 
 ```shell

@@ -250,34 +250,42 @@ class BlackboxExporterCharm(CharmBase):
         """Update the blackbox config yaml given a dict of modules defined in relation.
 
         This function takes the dict of modules from the BlackboxExporterRequirer and
-        updates the config file with the required modules, only if they do not exist already
-        in the config file.
+        updates the config file with the required modules. It compares the rendered config
+        to the current config file and writes only if there is a difference.
 
         Raises:
             yaml.YAMLError: If there is an error in the YAML formatting or parsing.
             TypeError: If type is not a string, as `yaml.safe_load` requires a string input.
+            ConfigUpdateFailure: If there is an error accessing or updating the config file.
         """
         if not modules:
             return
 
-        config_file_data = self.container.pull(self._config_path).read()
-
-        if not config_file_data:
-            return
+        try:
+            config_file_data = self.container.pull(self._config_path).read()
+        except Exception as e:
+            raise ConfigUpdateFailure(f"Failed to read the configuration file: {e}")
 
         config_data = yaml.safe_load(config_file_data)
 
         if "modules" not in config_data:
             config_data["modules"] = {}
 
-        for module_name, module_data in modules.items():
-            # Add modules from relation data only if they do not exist in the config file
-            if module_name not in config_data["modules"]:
-                config_data["modules"][module_name] = module_data
+        # Create a deep copy of the current config data to update
+        updated_config_data = config_data.copy()
 
-        updated_config_data = yaml.safe_dump(config_data)
-        self.container.push(self._config_path, updated_config_data)
-        self.blackbox_workload.reload()
+        # Update the modules and render the updated config
+        for module_name, module_data in modules.items():
+            updated_config_data["modules"][module_name] = module_data
+        rendered_updated_config = yaml.safe_dump(updated_config_data)
+
+        # Compare the rendered config to the current config file and update if necessary
+        if rendered_updated_config != config_file_data:
+            try:
+                self.container.push(self._config_path, rendered_updated_config)
+                self.blackbox_workload.reload()
+            except Exception as e:
+                raise ConfigUpdateFailure(f"Failed to update the configuration file: {e}")
 
     @property
     def probes_scraping_jobs(self):

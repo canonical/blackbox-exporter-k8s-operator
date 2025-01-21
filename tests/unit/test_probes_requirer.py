@@ -146,43 +146,65 @@ class BlackboxProbesRequirerTest(unittest.TestCase):
         self.assertEqual(self.harness.charm._stored.num_events, 1)
 
     def test_requirer_notifies_on_new_scrape_metadata_relation(self):
+        # GIVEN a charm with a Blackbox Probes requirer
         self.assertEqual(self.harness.charm._stored.num_events, 0)
-
         rel_id = self.harness.add_relation(RELATION_NAME, "requirer")
+
+        # WHEN the relation gets updated with new Metadata
         self.harness.update_relation_data(
             rel_id, "requirer", {"scrape_metadata": json.dumps(SCRAPE_METADATA)}
         )
+
+        # THEN the charm triggers an event
         self.assertEqual(self.harness.charm._stored.num_events, 1)
 
     def test_requirer_notifies_on_new_probes_target(self):
+        # GIVEN a charm with a Blackbox Probes requirer
         self.assertEqual(self.harness.charm._stored.num_events, 0)
         rel_id = self.harness.add_relation(RELATION_NAME, "requirer")
         self.harness.add_relation_unit(rel_id, "requirer/0")
+
+        # WHEN the relation gets updated with new probes
         self.harness.update_relation_data(
             rel_id, "requirer/0", {"scrape_probes": json.dumps(PROBES)}
         )
+
+        # THEN the charm triggers an event
         self.assertEqual(self.harness.charm._stored.num_events, 1)
 
     def test_requirer_notifies_on_new_modules_target(self):
+        # GIVEN a charm with a Blackbox Probes requirer
         self.assertEqual(self.harness.charm._stored.num_events, 0)
         rel_id = self.harness.add_relation(RELATION_NAME, "requirer")
         self.harness.add_relation_unit(rel_id, "requirer/0")
+
+        # WHEN the relation gets updated with new modules
         self.harness.update_relation_data(
             rel_id, "requirer/0", {"scrape_modules": json.dumps(MODULES)}
         )
+
+        # THEN the charm triggers an event
         self.assertEqual(self.harness.charm._stored.num_events, 1)
 
     def test_requirer_returns_all_probes_targets(self):
+        # GIVEN a charm with a Blackbox Probes requirer
         self.setup_charm_relations()
 
+        # WHEN the probes are retrieved from the requirer
         probes = self.harness.charm.probes_requirer.probes()
+
+        # THEN all the probes in the relation are returned in a list
         self.assertEqual(len(probes), 2)
         self.assertEqual(type(probes), list)
 
     def test_requirer_returns_all_modules(self):
+        # GIVEN a charm with a Blackbox Probes requirer
         self.setup_charm_relations()
 
+        # WHEN the modules are retrieved from the requirer
         modules = self.harness.charm.probes_requirer.modules()
+
+        # THEN all the modules in the relation are returned in a dict
         self.assertEqual(len(modules), 1)
         self.assertEqual(type(modules), dict)
 
@@ -204,9 +226,13 @@ class BlackboxProbesRequirerTest(unittest.TestCase):
         self.assertEqual(self.harness.charm._stored.num_events, 1)
 
     def test_requirer_returns_all_probes_targets_hashed(self):
+        # GIVEN a charm with a Blackbox Probes requirer that receives two probes with same job_name
         self.setup_charm_relations_same_name()
 
+        # WHEN the probes are retrieved from the requirer
         probes = self.harness.charm.probes_requirer.probes()
+
+        # THEN both the probes in the relation are returned in a list
         self.assertEqual(len(probes), 2)
         self.assertEqual(type(probes), list)
 
@@ -228,8 +254,12 @@ class BlackboxProbesRequirerTest(unittest.TestCase):
         self.assertEqual(self.harness.charm._stored.num_events, 1)
 
     def test_requirer_discard_identical_probes(self):
+        # GIVEN a charm with a Blackbox Probes requirer that receives two identical probes
         self.setup_charm_relations_identical()
 
+        # WHEN the probes are retrieved from the requirer
         probes = self.harness.charm.probes_requirer.probes()
+
+        # THEN one of the probes is discarded and the other returned in a list
         self.assertEqual(len(probes), 1)
         self.assertEqual(type(probes), list)

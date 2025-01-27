@@ -261,6 +261,11 @@ class BlackboxExporterCharm(CharmBase):
         if not modules:
             return
 
+        if not self.container.can_connect():
+            self.unit.status = MaintenanceStatus("Waiting for pod startup to complete")
+            return
+
+        # a config file should *always* be present in the image, or blackbox won't run
         try:
             config_file_data = self.container.pull(self._config_path).read()
         except Exception as e:

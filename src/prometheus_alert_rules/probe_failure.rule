@@ -7,7 +7,7 @@ groups:
       labels:
         severity: critical
       annotations:
-        summary: Blackbox Exporter target {{ $labels.probe_target }} has failed for at least 50% of the time over the last ten minutes
+        summary: Blackbox Exporter target {{ $labels.probe_target }} has failed for the last five minutes.
         description: >
-          Blackbox Exporter target {{ $labels.probe_target }} has failed for at least 50% of the time over the last ten minutes
+          Blackbox Exporter target {{ $labels.probe_target }} has failed for the last five minutes.
           LABELS = {{ $labels }}

@@ -1,0 +1,23 @@
+groups:
+  - name: probes
+    rules:
+    - alert: ProbeFailedOnce
+      expr: probe_success{} < 1
+      for: 0m
+      labels:
+        severity: warning
+      annotations:
+        summary: Blackbox Exporter target {{ $labels.probe_target }} has failed.
+        description: >
+          Blackbox Exporter target {{ $labels.probe_target }} has failed.
+          LABELS = {{ $labels }}
+    - alert: ProbeFailed
+      expr: probe_success{} < 1
+      for: 5m
+      labels:
+        severity: critical
+      annotations:
+        summary: Blackbox Exporter target {{ $labels.probe_target }} has failed for the last five minutes.
+        description: >
+          Blackbox Exporter target {{ $labels.probe_target }} has failed for the last five minutes.
+          LABELS = {{ $labels }}

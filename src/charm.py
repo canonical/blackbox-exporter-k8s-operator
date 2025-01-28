@@ -6,10 +6,9 @@
 
 import logging
 import socket
-from typing import cast
+from typing import Dict, cast
 from urllib.parse import urlparse
 
-import yaml
 from charms.blackbox_k8s.v0.blackbox_probes import BlackboxProbesRequirer
 from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
@@ -86,7 +85,8 @@ class BlackboxExporterCharm(CharmBase):
 
         # Action events
         self.framework.observe(
-            self.on.show_config_action, self._on_show_config_action  # pyright: ignore
+            self.on.show_config_action,
+            self._on_show_config_action,  # pyright: ignore
         )
 
         # Libraries
@@ -202,10 +202,13 @@ class BlackboxExporterCharm(CharmBase):
 
         # Update config file
         try:
-            self.blackbox_workload.update_config()
-            self._update_blackbox_config_yaml_given_dict_from_relation(
-                self._probes_requirer.modules()
+            base_config = self.blackbox_workload.build_config()
+            config = self._update_config_from_relation(
+                modules=self._probes_requirer.modules(),
+                config=base_config,
             )
+            self.blackbox_workload.push_config(config)
+
         except ConfigUpdateFailure as e:
             self.unit.status = BlockedStatus(str(e))
             return
@@ -246,12 +249,15 @@ class BlackboxExporterCharm(CharmBase):
 
         return [job]
 
-    def _update_blackbox_config_yaml_given_dict_from_relation(self, modules: dict) -> None:
+    def _update_config_from_relation(self, modules: Dict, config: Dict) -> Dict:
         """Update the blackbox config yaml given a dict of modules defined in relation.
 
         This function takes the dict of modules from the BlackboxExporterRequirer and
-        updates the config file with the required modules. It compares the rendered config
-        to the current config file and writes only if there is a difference.
+        updates the config file with the required modules.
+
+        Args:
+            modules: Some blackbox modules coming from relation data
+            config: The blackbox config to enrich with the passed modules
 
         Raises:
             yaml.YAMLError: If there is an error in the YAML formatting or parsing.
@@ -259,38 +265,20 @@ class BlackboxExporterCharm(CharmBase):
             ConfigUpdateFailure: If there is an error accessing or updating the config file.
         """
         if not modules:
-            return
+            return config
 
         if not self.container.can_connect():
             self.unit.status = MaintenanceStatus("Waiting for pod startup to complete")
-            return
+            return config
 
-        # a config file should *always* be present in the image, or blackbox won't run
-        try:
-            config_file_data = self.container.pull(self._config_path).read()
-        except Exception as e:
-            raise ConfigUpdateFailure(f"Failed to read the configuration file: {e}")
-
-        config_data = yaml.safe_load(config_file_data)
-
-        if "modules" not in config_data:
-            config_data["modules"] = {}
-
-        # Create a deep copy of the current config data to update
-        updated_config_data = config_data.copy()
+        if "modules" not in config:
+            config["modules"] = {}
 
         # Update the modules and render the updated config
         for module_name, module_data in modules.items():
-            updated_config_data["modules"][module_name] = module_data
-        rendered_updated_config = yaml.safe_dump(updated_config_data)
+            config["modules"][module_name] = module_data
 
-        # Compare the rendered config to the current config file and update if necessary
-        if rendered_updated_config != config_file_data:
-            try:
-                self.container.push(self._config_path, rendered_updated_config)
-                self.blackbox_workload.reload()
-            except Exception as e:
-                raise ConfigUpdateFailure(f"Failed to update the configuration file: {e}")
+        return config
 
     @property
     def probes_scraping_jobs(self):

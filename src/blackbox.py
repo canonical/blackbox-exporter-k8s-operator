@@ -213,7 +213,7 @@ class WorkloadManager(Object):
             raise ContainerNotReady("cannot update config")
         current_config = yaml.safe_load(self._container.pull(self._config_path).read())
         if config != current_config:
-            self._container.push(self._config_path, config, make_dirs=True)
+            self._container.push(self._config_path, yaml.dump(config), make_dirs=True)
 
     def restart_service(self) -> bool:
         """Helper function for restarting the underlying service.

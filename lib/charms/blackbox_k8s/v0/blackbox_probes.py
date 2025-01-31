@@ -513,10 +513,9 @@ class BlackboxProbesProvider(Object):
         for probe in self._probes:
             probe["job_name"] = "_".join(filter(None, [prefix, probe.get("job_name")]))
             probe_module = probe.get("params", {}).get("module", [])
-            for module in probe_module:
+            for i, module in enumerate(probe_module):
                 if module in self._modules:
-                    prefixed_module_value = f"{prefix}_{module}"
-                    probe['params']['module'].append(prefixed_module_value)
+                    probe_module[i] = f"{prefix}_{module}"
 
     def _prefix_modules(self, prefix: str) -> None:
         """Prefix the modules with the charm metadata."""

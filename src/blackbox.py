@@ -10,7 +10,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Optional, cast
+from typing import Dict, Optional, cast
 
 import yaml
 from ops.framework import Object
@@ -39,6 +39,45 @@ class WorkloadManager(Object):
 
     _layer_name = _service_name = "blackbox"
     _exe_name = "blackbox_exporter"
+    _default_config = {
+        "modules": {
+            "http_2xx": {"prober": "http", "http": {"preferred_ip_protocol": "ip4"}},
+            "http_post_2xx": {"prober": "http", "http": {"method": "POST"}},
+            "tcp_connect": {"prober": "tcp"},
+            "pop3s_banner": {
+                "prober": "tcp",
+                "tcp": {
+                    "query_response": [{"expect": "^+OK"}],
+                    "tls": True,
+                    "tls_config": {"insecure_skip_verify": False},
+                },
+            },
+            "grpc": {"prober": "grpc", "grpc": {"tls": True, "preferred_ip_protocol": "ip4"}},
+            "grpc_plain": {"prober": "grpc", "grpc": {"tls": False, "service": "service1"}},
+            "ssh_banner": {
+                "prober": "tcp",
+                "tcp": {
+                    "query_response": [
+                        {"expect": "^SSH-2.0-"},
+                        {"send": "SSH-2.0-blackbox-ssh-check"},
+                    ]
+                },
+            },
+            "irc_banner": {
+                "prober": "tcp",
+                "tcp": {
+                    "query_response": [
+                        {"send": "NICK prober"},
+                        {"send": "USER prober prober prober :prober"},
+                        {"expect": "PING :([^ ]+)", "send": "PONG ${1}"},
+                        {"expect": "^:[^ ]+ 001"},
+                    ]
+                },
+            },
+            "icmp": {"prober": "icmp"},
+            "icmp_ttl5": {"prober": "icmp", "timeout": "5s", "icmp": {"ttl": 5}},
+        }
+    }
 
     def __init__(
         self,
@@ -147,7 +186,7 @@ class WorkloadManager(Object):
                 str(e),
             )
 
-    def update_config(self) -> None:
+    def build_config(self) -> Dict:
         """Update blackbox exporter config file to reflect changes in configuration.
 
         Raises:
@@ -157,16 +196,24 @@ class WorkloadManager(Object):
             raise ContainerNotReady("cannot update config")
         logger.debug("applying config changes")
         config = cast(str, self.model.config.get("config_file"))
-        # Basic config validation: valid yaml
-        if config:
-            try:
-                yaml.safe_load(config)
-            except yaml.YAMLError as e:
-                logger.error(
-                    "Failed to load the configuration; invalid YAML: %s %s", config, str(e)
-                )
-                raise ConfigUpdateFailure("Failed to load config; invalid YAML")
-            self._container.push(self._config_path, config, make_dirs=True)
+        # If no config file is defined, set the default one
+        if not config:
+            return self._default_config
+        # If a config file is specified, do basic config validation: valid yaml
+        try:
+            provided_config = yaml.safe_load(config)
+        except yaml.YAMLError as e:
+            logger.error("Failed to load the configuration; invalid YAML: %s %s", config, str(e))
+            raise ConfigUpdateFailure("Failed to load config; invalid YAML")
+        return provided_config
+
+    def push_config(self, config: Dict) -> None:
+        """Push a blackbox config if it's different than the one on disk."""
+        if not self.is_ready:
+            raise ContainerNotReady("cannot update config")
+        current_config = yaml.safe_load(self._container.pull(self._config_path).read())
+        if config != current_config:
+            self._container.push(self._config_path, yaml.dump(config), make_dirs=True)
 
     def restart_service(self) -> bool:
         """Helper function for restarting the underlying service.

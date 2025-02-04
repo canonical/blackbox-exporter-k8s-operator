@@ -9,6 +9,7 @@ options:
       Blackbox Exporter configuration file (yaml).
       Refer to https://github.com/prometheus/blackbox_exporter/blob/master/CONFIGURATION.md for
       full details.
+      The modules provided via blackbox_exporter_probes interface are merged with the modules defined here.
   probes_file:
     type: string
     default: ""
@@ -16,6 +17,10 @@ options:
       Scrape config for Prometheus in a file (yaml).
       Refer to https://github.com/prometheus/blackbox_exporter#prometheus-configuration for full
       details.
+      The probes provided via blackbox_exporter_probes interface are merged with the probes defined here.
+      The relation probes are hashed to ensure uniquess in the blackbox_probes.py library.
+      However, in case of same `job_name` the relation probe takes precedence,
+      overriding the corresponding file probe.
   cpu:
     description: |
       K8s cpu resource limit, e.g. "1" or "500m". Default is unset (no limit). This value is used

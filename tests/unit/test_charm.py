@@ -26,6 +26,7 @@ class TestWithInitialHooks(unittest.TestCase):
     @k8s_resource_multipatch
     @patch("lightkube.core.client.GenericSyncClient")
     @patch.object(WorkloadManager, "_blackbox_exporter_version", property(lambda *_: "0.0.0"))
+    @patch.object(WorkloadManager, "push_config")
     def setUp(self, *unused):
         self.harness = Harness(BlackboxExporterCharm)
         self.addCleanup(self.harness.cleanup)
@@ -57,6 +58,7 @@ class TestWithInitialHooks(unittest.TestCase):
         self.assertTrue(service.is_running())
 
     @k8s_resource_multipatch
+    @patch.object(WorkloadManager, "push_config")
     def test_charm_blocks_if_user_provided_config_with_templates(self, *unused):
         new_config = "some: -   malformed yaml"
         self.harness.update_config({"config_file": new_config})
@@ -84,6 +86,7 @@ class TestWithoutInitialHooks(unittest.TestCase):
 
     @k8s_resource_multipatch
     @patch.object(WorkloadManager, "_blackbox_exporter_version", property(lambda *_: "0.0.0"))
+    @patch.object(WorkloadManager, "push_config")
     def test_unit_status_around_pebble_ready(self, *unused):
         # before pebble_ready, status should be "maintenance"
         self.assertIsInstance(self.harness.charm.unit.status, ops.model.MaintenanceStatus)

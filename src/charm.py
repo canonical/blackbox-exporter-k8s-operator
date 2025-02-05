@@ -9,7 +9,7 @@ import socket
 from typing import Dict, cast
 from urllib.parse import urlparse
 
-from charms.blackbox_k8s.v0.blackbox_probes import BlackboxProbesRequirer
+from charms.blackbox_exporter_k8s.v0.blackbox_probes import BlackboxProbesRequirer
 from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
 from charms.loki_k8s.v1.loki_push_api import LogForwarder

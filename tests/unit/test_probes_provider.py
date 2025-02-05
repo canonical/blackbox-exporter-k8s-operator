@@ -5,7 +5,7 @@ import json
 import unittest
 from typing import List
 
-from charms.blackbox_k8s.v0.blackbox_probes import BlackboxProbesProvider
+from charms.blackbox_exporter_k8s.v0.blackbox_probes import BlackboxProbesProvider
 from cosl import JujuTopology
 from ops.charm import CharmBase
 from ops.framework import StoredState

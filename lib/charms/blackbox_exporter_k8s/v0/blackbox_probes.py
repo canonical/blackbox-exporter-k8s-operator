@@ -234,7 +234,7 @@ LIBAPI = 0
 
 # Increment this PATCH version before using `charmcraft publish-lib` or reset
 # to 0 if you are raising the major API version
-LIBPATCH = 1
+LIBPATCH = 2
 
 PYDEPS = ["pydantic"]
 
@@ -688,7 +688,8 @@ class BlackboxProbesRequirer(Object):
                 if not relation.data[relation.app]:
                     continue
                 databag = ApplicationDataModel.load(relation.data[relation.app])
-                scrape_probes = self._process_and_hash_probes(databag)
+                relation_scrape_probes = self._process_and_hash_probes(databag)
+                scrape_probes.extend(relation_scrape_probes)
             except (json.JSONDecodeError, pydantic.ValidationError, DataValidationError) as e:
                 error_message = f"Invalid probes provided in relation {relation.id}: {e}"
                 errors.append(error_message)

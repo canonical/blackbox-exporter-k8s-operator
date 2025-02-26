@@ -18,7 +18,7 @@ containers:
   blackbox-tester:
 requires:
   {RELATION_NAME}:
-    interface: blackbox_probes
+    interface: blackbox_exporter_probes
 """
 
 PROBES: List[dict] = [
@@ -262,4 +262,36 @@ class BlackboxProbesRequirerTest(unittest.TestCase):
 
         # THEN one of the probes is discarded and the other returned in a list
         self.assertEqual(len(probes), 1)
+        self.assertEqual(type(probes), list)
+
+    def test_multiple_provider_relations(self):
+        # GIVEN two relations using the probes requirer interface
+        first_rel_id = self.harness.add_relation(RELATION_NAME, "first_requirer")
+        second_rel_id = self.harness.add_relation(RELATION_NAME, "second_requirer")
+
+        self.harness.update_relation_data(
+            first_rel_id,
+            "first_requirer",
+            {
+                "scrape_metadata": json.dumps(SCRAPE_METADATA),
+                "scrape_probes": json.dumps(PROBES),
+                "scrape_modules": json.dumps(MODULES),
+            },
+        )
+
+        self.harness.update_relation_data(
+            second_rel_id,
+            "second_requirer",
+            {
+                "scrape_metadata": json.dumps(SCRAPE_METADATA),
+                "scrape_probes": json.dumps(PROBES),
+                "scrape_modules": json.dumps(MODULES),
+            },
+        )
+
+        # WHEN the probes are retrieved from the requirer
+        probes = self.harness.charm.probes_requirer.probes()
+
+        # THEN all the probes in all the relations are returned in a list
+        self.assertEqual(len(probes), 4)
         self.assertEqual(type(probes), list)

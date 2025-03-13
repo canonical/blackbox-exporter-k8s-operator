@@ -79,7 +79,8 @@ class ScrapeConfigBuilder:
                 {"source_labels": ["__address__"], "target_label": "__param_target"},
                 {"source_labels": ["__param_target"], "target_label": "instance"},
                 {"source_labels": ["__param_target"], "target_label": "probe_target"},
-                {"target_label": "__address__", "replacement": external_url.hostname},
+                # In our case, the external url is never going to have basic auth, so taking netloc should be safe
+                {"target_label": "__address__", "replacement": external_url.netloc},
             ]
 
         return merged_scrape_configs

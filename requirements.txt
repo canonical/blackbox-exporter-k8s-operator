@@ -26,4 +26,5 @@ PyYAML
 lightkube >= 0.11
 lightkube-models
 
-cosl
+# prometheus_scrape lib requires cosl.rules.generic_alert_groups from version 0.0.53
+cosl >= 0.0.53

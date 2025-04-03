@@ -10,71 +10,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "alertmanager-k8s"
-version = "0.0"
-source = { virtual = "." }
-dependencies = [
-    { name = "cosl" },
-    { name = "jsonschema" },
-    { name = "lightkube" },
-    { name = "lightkube-models" },
-    { name = "ops" },
-    { name = "pyyaml" },
-]
-
-[package.optional-dependencies]
-dev = [
-    { name = "codespell" },
-    { name = "coverage", version = "7.6.1", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version < '3.9'" },
-    { name = "coverage", version = "7.8.0", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version >= '3.9'" },
-    { name = "deepdiff" },
-    { name = "hypothesis", version = "6.113.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "hypothesis", version = "6.130.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "juju", version = "3.5.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8.6'" },
-    { name = "juju", version = "3.6.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.8.6'" },
-    { name = "ops-scenario" },
-    { name = "pydantic", version = "2.10.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "pydantic", version = "2.11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "pyright" },
-    { name = "pytest" },
-    { name = "pytest-httpserver", version = "1.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "pytest-httpserver", version = "1.1.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-    { name = "pytest-interface-tester" },
-    { name = "pytest-operator" },
-    { name = "ruff" },
-    { name = "sh", version = "1.14.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8.1'" },
-    { name = "sh", version = "2.2.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.8.1'" },
-    { name = "validators" },
-    { name = "websockets" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "codespell", marker = "extra == 'dev'" },
-    { name = "cosl" },
-    { name = "coverage", extras = ["toml"], marker = "extra == 'dev'" },
-    { name = "deepdiff", marker = "extra == 'dev'" },
-    { name = "hypothesis", marker = "extra == 'dev'" },
-    { name = "jsonschema" },
-    { name = "juju", marker = "extra == 'dev'" },
-    { name = "lightkube", specifier = ">=0.11" },
-    { name = "lightkube-models" },
-    { name = "ops" },
-    { name = "ops-scenario", marker = "extra == 'dev'" },
-    { name = "pydantic", marker = "extra == 'dev'", specifier = ">2.0" },
-    { name = "pyright", marker = "extra == 'dev'" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-httpserver", marker = "extra == 'dev'" },
-    { name = "pytest-interface-tester", marker = "extra == 'dev'", specifier = ">0.3" },
-    { name = "pytest-operator", marker = "extra == 'dev'" },
-    { name = "pyyaml" },
-    { name = "ruff", marker = "extra == 'dev'" },
-    { name = "sh", marker = "extra == 'dev'" },
-    { name = "validators", marker = "extra == 'dev'", specifier = ">=0.21.2" },
-    { name = "websockets", marker = "extra == 'dev'", specifier = "<14.0" },
-]
-
-[[package]]
 name = "annotated-types"
 version = "0.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -281,6 +216,71 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/94/41/19be9fe17e4ffc5d10b7b67f10e459fc4eee6ffe9056a88de511920cfd8d/bcrypt-4.3.0-pp311-pypy311_pp73-manylinux_2_28_x86_64.whl", hash = "sha256:bdc6a24e754a555d7316fa4774e64c6c3997d27ed2d1964d55920c7c227bc4ce", size = 280513 },
     { url = "https://files.pythonhosted.org/packages/aa/73/05687a9ef89edebdd8ad7474c16d8af685eb4591c3c38300bb6aad4f0076/bcrypt-4.3.0-pp311-pypy311_pp73-manylinux_2_34_aarch64.whl", hash = "sha256:55a935b8e9a1d2def0626c4269db3fcd26728cbff1e84f0341465c31c4ee56d8", size = 274685 },
     { url = "https://files.pythonhosted.org/packages/63/13/47bba97924ebe86a62ef83dc75b7c8a881d53c535f83e2c54c4bd701e05c/bcrypt-4.3.0-pp311-pypy311_pp73-manylinux_2_34_x86_64.whl", hash = "sha256:57967b7a28d855313a963aaea51bf6df89f833db4320da458e5b3c5ab6d4c938", size = 280110 },
+]
+
+[[package]]
+name = "blackbox-exporter-k8s"
+version = "0.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "cosl" },
+    { name = "jsonschema" },
+    { name = "lightkube" },
+    { name = "lightkube-models" },
+    { name = "ops" },
+    { name = "pyyaml" },
+]
+
+[package.optional-dependencies]
+dev = [
+    { name = "codespell" },
+    { name = "coverage", version = "7.6.1", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version < '3.9'" },
+    { name = "coverage", version = "7.8.0", source = { registry = "https://pypi.org/simple" }, extra = ["toml"], marker = "python_full_version >= '3.9'" },
+    { name = "deepdiff" },
+    { name = "hypothesis", version = "6.113.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "hypothesis", version = "6.130.8", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "juju", version = "3.5.2.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8.6'" },
+    { name = "juju", version = "3.6.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.8.6'" },
+    { name = "ops-scenario" },
+    { name = "pydantic", version = "2.10.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pydantic", version = "2.11.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "pyright" },
+    { name = "pytest" },
+    { name = "pytest-httpserver", version = "1.1.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "pytest-httpserver", version = "1.1.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+    { name = "pytest-interface-tester" },
+    { name = "pytest-operator" },
+    { name = "ruff" },
+    { name = "sh", version = "1.14.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8.1'" },
+    { name = "sh", version = "2.2.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.8.1'" },
+    { name = "validators" },
+    { name = "websockets" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "codespell", marker = "extra == 'dev'" },
+    { name = "cosl" },
+    { name = "coverage", extras = ["toml"], marker = "extra == 'dev'" },
+    { name = "deepdiff", marker = "extra == 'dev'" },
+    { name = "hypothesis", marker = "extra == 'dev'" },
+    { name = "jsonschema" },
+    { name = "juju", marker = "extra == 'dev'" },
+    { name = "lightkube", specifier = ">=0.11" },
+    { name = "lightkube-models" },
+    { name = "ops" },
+    { name = "ops-scenario", marker = "extra == 'dev'" },
+    { name = "pydantic", marker = "extra == 'dev'", specifier = ">2.0" },
+    { name = "pyright", marker = "extra == 'dev'" },
+    { name = "pytest", marker = "extra == 'dev'" },
+    { name = "pytest-httpserver", marker = "extra == 'dev'" },
+    { name = "pytest-interface-tester", marker = "extra == 'dev'", specifier = ">0.3" },
+    { name = "pytest-operator", marker = "extra == 'dev'" },
+    { name = "pyyaml" },
+    { name = "ruff", marker = "extra == 'dev'" },
+    { name = "sh", marker = "extra == 'dev'" },
+    { name = "validators", marker = "extra == 'dev'", specifier = ">=0.21.2" },
+    { name = "websockets", marker = "extra == 'dev'", specifier = "<14.0" },
 ]
 
 [[package]]

@@ -1,7 +1,7 @@
 # Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
 [project]
-name = "alertmanager-k8s"
+name = "blackbox-exporter-k8s"
 version = "0.0"
 requires-python = "~=3.8"
 

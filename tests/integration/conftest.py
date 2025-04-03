@@ -79,6 +79,7 @@ def httpserver_listen_address():
 
 @pytest.fixture(autouse=True, scope="module")
 async def setup_env(ops_test: OpsTest):
+    assert ops_test.model
     # Prevent "update-status" from interfering with the test:
     # - if fired "too quickly", traefik will flip between active/idle and maintenance;
     # - make sure charm code does not rely on update-status for correct operation.

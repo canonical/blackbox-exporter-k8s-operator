@@ -36,6 +36,7 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
 
     Assert on the unit status before any relations/configurations take place.
     """
+    assert ops_test.model
     # deploy charm from local source folder
     await asyncio.gather(
         ops_test.model.deploy(

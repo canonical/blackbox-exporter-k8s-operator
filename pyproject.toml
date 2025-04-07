@@ -1,5 +1,43 @@
 # Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
+[project]
+name = "blackbox-exporter-k8s"
+version = "0.0"
+requires-python = "~=3.8"
+
+dependencies = [
+  "ops",
+  "pyyaml",
+  "lightkube>=0.11",  # observability_libs
+  "lightkube-models",  # observability_libs
+  "jsonschema", # traefik_k8s, tls_certificates
+  "cosl",
+]
+
+[project.optional-dependencies]
+dev = [
+  # Linting
+  "ruff",
+  "codespell",
+  # Static
+  "pyright",
+  # Unit
+  "pytest",
+  "coverage[toml]",
+  "deepdiff",
+  "hypothesis",
+  "validators>=0.21.2",
+  "pydantic>2.0",
+  "ops-scenario",
+  # Interface
+  "pytest-interface-tester>0.3",
+  # Integration
+  "juju",
+  "websockets<14.0",
+  "pytest-operator",
+  "pytest-httpserver",
+  "sh",
+]
 
 # Testing tools configuration
 [tool.coverage.run]
@@ -31,7 +69,7 @@ convention = "google"
 
 # Static analysis tools configuration
 [tool.pyright]
-extraPaths = ["lib"]
+extraPaths = ["src", "lib"]
 pythonVersion = "3.8"
 pythonPlatform = "All"
 
@@ -39,6 +77,7 @@ pythonPlatform = "All"
 minversion = "6.0"
 log_cli_level = "INFO"
 asyncio_mode = "auto"
+addopts = "--tb=native --verbose --capture=no --log-cli-level=INFO"
 
 [tool.codespell]
 skip = ".git,.tox,build,venv*"

@@ -39,7 +39,7 @@ resources:
   blackbox-exporter-image:
     type: oci-image
     description: OCI image for Blackbox Exporter
-    upstream-source: quay.io/prometheus/blackbox-exporter:v0.24.0
+    upstream-source: ubuntu/blackbox-exporter:0.26-24.04
 
 provides:
   self-metrics-endpoint:

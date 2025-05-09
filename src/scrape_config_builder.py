@@ -65,6 +65,7 @@ class ScrapeConfigBuilder:
         """
         external_url = urlparse(self.external_url)
         probes_path = f"{external_url.path.rstrip('/')}/probe"
+        external_url_port = f":{external_url.port}" if external_url.port else ""
 
         file_probes_scrape_jobs_dict = yaml.safe_load(file_probes) if file_probes else {}
 
@@ -79,7 +80,10 @@ class ScrapeConfigBuilder:
                 {"source_labels": ["__address__"], "target_label": "__param_target"},
                 {"source_labels": ["__param_target"], "target_label": "instance"},
                 {"source_labels": ["__param_target"], "target_label": "probe_target"},
-                {"target_label": "__address__", "replacement": external_url.hostname},
+                {
+                    "target_label": "__address__",
+                    "replacement": f"{external_url.hostname}{external_url_port}",
+                },
             ]
 
         return merged_scrape_configs

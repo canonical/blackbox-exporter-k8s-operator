@@ -60,6 +60,22 @@ async def can_blackbox_probe(
     return response.code == 200 and "probe_success 1" in str(response.read())
 
 
+async def all_prometheus_targets_up(
+    ops_test: OpsTest,
+    app_name: str,
+    unit_num: int = 0,
+):
+    address = await get_unit_address(ops_test, app_name, unit_num)
+    url = f"http://{address}:9090"
+    response = urllib.request.urlopen(f"{url}/api/v1/targets", data=None)
+    if response.code != 200:
+        return False
+    response_data = response.read().decode("utf-8")
+    response_json = json.loads(response_data)
+    targets = response_json.get("data", {}).get("activeTargets", [])
+    return all(target["health"] == "up" for target in targets)
+
+
 async def get_blackbox_config_from_file(
     ops_test: OpsTest, app_name: str, container_name: str, config_file_path: str
 ) -> Tuple[Optional[int], str, str]:

@@ -60,7 +60,7 @@ async def can_blackbox_probe(
     return response.code == 200 and "probe_success 1" in str(response.read())
 
 
-async def are_prometheus_targets_up(
+async def all_prometheus_targets_up(
     ops_test: OpsTest,
     app_name: str,
     unit_num: int = 0,

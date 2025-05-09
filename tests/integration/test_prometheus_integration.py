@@ -9,7 +9,7 @@ import pytest
 import sh
 import yaml
 from helpers import (
-    are_prometheus_targets_up,
+    all_prometheus_targets_up,
     can_blackbox_probe,
     is_blackbox_up,
 )
@@ -83,4 +83,4 @@ async def test_integrate_prometheus(ops_test: OpsTest):
         apps=[app_name, "prometheus"], status="active", timeout=1000
     )
     time.sleep(60)  # wait for the 1m scrape time
-    assert await are_prometheus_targets_up(ops_test, "prometheus")
+    assert await all_prometheus_targets_up(ops_test, "prometheus")

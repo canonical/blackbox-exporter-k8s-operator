@@ -15,10 +15,10 @@ links:
 
 assumes:
   - k8s-api
-  - juju >= 3.4  # Juju >= 3.4 needed for Pebble log forwarding
+  - juju >= 3.6  # Juju >= 3.4 needed for Pebble log forwarding
 
 platforms:
-  ubuntu@20.04:amd64:
+  ubuntu@24.04:amd64:
 
 parts:
   charm:

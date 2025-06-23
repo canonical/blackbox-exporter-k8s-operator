@@ -7,7 +7,7 @@ variable "app_name" {
 variable "channel" {
   description = "Channel that the charm is deployed from"
   type        = string
-  default     = "latest/beta"
+  default     = "1/stable"
 }
 
 variable "config" {

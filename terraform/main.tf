@@ -1,14 +1,6 @@
-# -------------- # Model --------------
-
-data "juju_model" "model" {
-  name = var.model
-}
-
-# -------------- # Application --------------
-
 resource "juju_application" "blackbox_exporter" {
   name  = var.app_name
-  model = data.juju_model.model.name
+  model = var.model
   # We always need this variable to be true in order
   # to be able to apply resources limits.
   trust = true

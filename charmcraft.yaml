@@ -2,7 +2,7 @@
 # See LICENSE file for licensing details.
 name: blackbox-exporter-k8s
 type: charm
-summary: Perform blackbox probes with a moltitude of protocols.
+summary: Perform blackbox probes with a multitude of protocols.
 description: |
   Blackbox exporter is a Prometheus exporter that allows to perform blackbox
   probes using a multitude of protocols, including HTTP(s), DNS, TCP and ICMP.

@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 
 async def get_unit_address(ops_test: OpsTest, app_name: str, unit_num: int) -> str:
     """Get private address of a unit."""
+    assert ops_test.model
     status = await ops_test.model.get_status()  # noqa: F821
     return status["applications"][app_name]["units"][f"{app_name}/{unit_num}"]["address"]
 
@@ -30,10 +31,13 @@ async def is_blackbox_unit_up(ops_test: OpsTest, app_name: str, unit_num: int):
 
 
 async def is_blackbox_up(ops_test: OpsTest, app_name: str):
+    assert ops_test.model
+    application = ops_test.model.applications[app_name]
+    assert application
     return all(
         [
             await is_blackbox_unit_up(ops_test, app_name, unit_num)
-            for unit_num in range(len(ops_test.model.applications[app_name].units))
+            for unit_num in range(len(application.units))
         ]
     )
 
@@ -54,6 +58,22 @@ async def can_blackbox_probe(
         f"{url}/probe?target={target}&module={module}", data=None, timeout=2.0
     )
     return response.code == 200 and "probe_success 1" in str(response.read())
+
+
+async def all_prometheus_targets_up(
+    ops_test: OpsTest,
+    app_name: str,
+    unit_num: int = 0,
+):
+    address = await get_unit_address(ops_test, app_name, unit_num)
+    url = f"http://{address}:9090"
+    response = urllib.request.urlopen(f"{url}/api/v1/targets", data=None)
+    if response.code != 200:
+        return False
+    response_data = response.read().decode("utf-8")
+    response_json = json.loads(response_data)
+    targets = response_json.get("data", {}).get("activeTargets", [])
+    return all(target["health"] == "up" for target in targets)
 
 
 async def get_blackbox_config_from_file(

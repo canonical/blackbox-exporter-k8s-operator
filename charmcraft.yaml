@@ -1,15 +1,118 @@
 # Copyright 2021 Canonical Ltd.
 # See LICENSE file for licensing details.
-
+name: blackbox-exporter-k8s
 type: charm
-bases:
-  - build-on:
-    - name: "ubuntu"
-      channel: "22.04"
-    run-on:
-    - name: "ubuntu"
-      channel: "22.04"
+summary: Perform blackbox probes with a moltitude of protocols.
+description: |
+  Blackbox exporter is a Prometheus exporter that allows to perform blackbox
+  probes using a multitude of protocols, including HTTP(s), DNS, TCP and ICMP.
+
+links:
+  documentation: https://discourse.charmhub.io/t/blackbox-exporter-k8s-docs-index/11728
+  website: https://charmhub.io/blackbox-exporter-k8s
+  source: https://github.com/canonical/blackbox-exporter-k8s-operator
+  issues: https://github.com/canonical/blackbox-exporter-k8s-operator/issues
+
+assumes:
+  - k8s-api
+  - juju >= 3.6  # Juju >= 3.4 needed for Pebble log forwarding
+
+platforms:
+  ubuntu@24.04:amd64:
+
 parts:
   charm:
-    build-packages: [cargo, rustc, pkg-config, libffi-dev, libssl-dev]
-    charm-binary-python-packages: [ops, PyYAML, cryptography, jsonschema, pydantic-core]
+    source: .
+    plugin: uv
+    build-packages: [git]
+    build-snaps: [astral-uv]
+    override-build: |
+      craftctl default
+      git describe --always > $CRAFT_PART_INSTALL/version
+
+containers:
+  blackbox:
+    resource: blackbox-exporter-image
+
+resources:
+  blackbox-exporter-image:
+    type: oci-image
+    description: OCI image for Blackbox Exporter
+    upstream-source: ubuntu/blackbox-exporter:0.26-24.04
+
+provides:
+  self-metrics-endpoint:
+    interface: prometheus_scrape
+    optional: true
+    description: |
+      Exposes the Prometheus metrics endpoint providing telemetry about the Blackbox instance.
+  grafana-dashboard:
+    interface: grafana_dashboard
+    optional: true
+    description: |
+      Forwards the built-in Grafana dashboard(s) for monitoring Blackbox.
+
+
+requires:
+  logging:
+    interface: loki_push_api
+    optional: true
+    description: |
+      Receives Loki's push api endpoint address to push logs to, and forwards charm's built-in alert rules to Loki.
+  ingress:
+    interface: ingress
+    optional: true
+    limit: 1
+    description: |
+      Ingress integration for Blackbox exporter, so that it can be reached by a
+      cross-model Prometheus instanc-model workloads can send their logs to
+      Loki through the ingress.
+  catalogue:
+    interface: catalogue
+    optional: true
+    description: Add Alertmanager as an item to a Catalogue charm.
+  probes:
+    interface: blackbox_exporter_probes
+    optional: true
+    description: |
+          Receive a list of probes (server address and probing method) from the provider to query.
+
+config:
+  options:
+    config_file:
+      type: string
+      default: ""
+      description: >
+        Blackbox Exporter configuration file (yaml).
+        Refer to https://github.com/prometheus/blackbox_exporter/blob/master/CONFIGURATION.md for
+        full details.
+        The modules provided via blackbox_exporter_probes interface are merged with the modules defined here.
+    probes_file:
+      type: string
+      default: ""
+      description: >
+        Scrape config for Prometheus in a file (yaml).
+        Refer to https://github.com/prometheus/blackbox_exporter#prometheus-configuration for full
+        details.
+        The probes provided via blackbox_exporter_probes interface are merged with the probes defined here.
+        The relation probes are hashed to ensure uniquess in the blackbox_probes.py library.
+        However, in case of same `job_name` the relation probe takes precedence,
+        overriding the corresponding file probe.
+    cpu:
+      description: |
+        K8s cpu resource limit, e.g. "1" or "500m". Default is unset (no limit). This value is used
+        for the "limits" portion of the resource requirements (the "requests" portion is
+        automatically deduced from it).
+        See https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      type: string
+    memory:
+      description: |
+        K8s memory resource limit, e.g. "1Gi". Default is unset (no limit). This value is used
+        for the "limits" portion of the resource requirements (the "requests" portion is
+        automatically deduced from it).
+        See https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+      type: string
+
+actions:
+  show-config:
+    description: Show Blackbox Exporter config file.

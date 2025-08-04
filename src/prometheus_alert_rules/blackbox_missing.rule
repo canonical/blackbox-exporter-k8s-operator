@@ -1,13 +1,16 @@
 # Based on https://awesome-prometheus-alerts.grep.to/rules.html#prometheus-self-monitoring-1
-alert: BlackboxJobMissing
-expr: absent(up{})
-for: 0m
-labels:
-  severity: warning
-annotations:
-  summary: Blackbox job missing (instance {{ $labels.instance }})
-  description: |
-    A Blackbox job has disappeared
-    VALUE = {{ $value }}
-    LABELS = {{ $labels }}
+groups:
+- name: BlackboxJobMissing
+  rules:
+  - alert: BlackboxJobMissing
+    expr: absent(up{})
+    for: 0m
+    labels:
+      severity: warning
+    annotations:
+      summary: Blackbox job missing (instance {{ $labels.instance }})
+      description: |
+        A Blackbox job has disappeared
+        VALUE = {{ $value }}
+        LABELS = {{ $labels }}
 

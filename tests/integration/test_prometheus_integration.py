@@ -59,7 +59,7 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
         "prometheus-k8s",
         "prometheus",
         model=ops_test.model.name,
-        channel="latest/edge",
+        channel="1/edge",
         trust=True,
     )
     await ops_test.model.wait_for_idle(apps=[app_name], status="active", timeout=1000)

@@ -65,7 +65,7 @@ requires:
     limit: 1
     description: |
       Ingress integration for Blackbox exporter, so that it can be reached by a
-      cross-model Prometheus instance-model workloads can send their logs to
+      cross-model Prometheus instance. The workload can send send logs to
       Loki through the ingress.
   catalogue:
     interface: catalogue

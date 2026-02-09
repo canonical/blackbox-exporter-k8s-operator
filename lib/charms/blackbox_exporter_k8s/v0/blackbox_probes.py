@@ -23,7 +23,7 @@ the name of the relation over which a probe target
 is exposed to the Blakcbox Exporter charm. This relation must use the
 `blackbox_exporter_probes` interface.
 The default name for the metrics endpoint relation is
-`blackbox-probes`. It is strongly recommended to use the same
+`probes`. It is strongly recommended to use the same
 relation name for consistency across charms and doing so obviates the
 need for an additional constructor argument. The
 `BlackboxProbesProvider` object may be instantiated as follows:

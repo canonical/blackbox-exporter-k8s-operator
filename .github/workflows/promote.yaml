@@ -10,6 +10,11 @@ on:
           - edge -> beta
           - beta -> candidate
           - candidate -> stable
+      track:
+        type: string
+        description: Track to promote
+        default: latest
+        required: false
 
 jobs:
   promote:
@@ -17,4 +22,5 @@ jobs:
     uses: canonical/observability/.github/workflows/charm-promote.yaml@v1
     with:
       promotion: ${{ github.event.inputs.promotion }}
+      track: ${{ github.event.inputs.track }}
     secrets: inherit

@@ -4,8 +4,23 @@ name: blackbox-exporter-k8s
 type: charm
 summary: Perform blackbox probes with a multitude of protocols.
 description: |
-  Blackbox exporter is a Prometheus exporter that allows to perform blackbox
-  probes using a multitude of protocols, including HTTP(s), DNS, TCP and ICMP.
+  Blackbox Exporter K8s is a Juju charm that deploys and manages the Prometheus Blackbox
+  Exporter on Kubernetes, enabling blackbox probing of endpoints over HTTP(S), DNS, TCP, and
+  ICMP. It is a complementary charm to the Canonical Observability Stack (COS), allowing
+  operators to monitor the reachability and responsiveness of external services:
+  https://documentation.ubuntu.com/observability
+
+  Probe configurations are provided via Juju config or through the probes relation, and are
+  automatically registered as Prometheus scrape jobs.
+
+  Key features:
+
+  - Blackbox probing over multiple protocols: HTTP(S), DNS, TCP, and ICMP.
+  - Automatic probe registration as Prometheus scrape jobs via Juju relations.
+  - Built-in Grafana dashboards and Prometheus alert rules for self-monitoring.
+  - Seamless integration with Prometheus, Grafana, and Loki through Juju relations.
+  - Ingress support for external access through reverse proxies such as Traefik.
+  - Configurable Kubernetes resource limits for CPU and memory.
 
 links:
   documentation: https://discourse.charmhub.io/t/blackbox-exporter-k8s-docs-index/11728

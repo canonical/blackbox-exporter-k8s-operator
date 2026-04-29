@@ -3,8 +3,6 @@
 This is a Terraform module facilitating the deployment of blackbox-exporter-k8s charm, using the [Terraform juju provider](https://github.com/juju/terraform-provider-juju/). For more information, refer to the provider [documentation](https://registry.terraform.io/providers/juju/juju/latest/docs).
 
 <!-- BEGIN_TF_DOCS -->
-
-
 ## Requirements
 
 | Name | Version |
@@ -16,7 +14,7 @@ This is a Terraform module facilitating the deployment of blackbox-exporter-k8s 
 
 | Name | Version |
 |------|---------|
-| <a name="provider_juju"></a> [juju](#provider\_juju) | 1.5.0 |
+| <a name="provider_juju"></a> [juju](#provider\_juju) | ~> 1.0 |
 
 ## Modules
 

@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Set
 
 import pytest
 import yaml
-from helpers import get_unit_address
+from helpers import can_blackbox_probe, get_unit_address
 from lightkube import Client
 from lightkube.generic_resource import create_namespaced_resource
 from pytest_operator.plugin import OpsTest
@@ -24,6 +24,18 @@ METADATA = yaml.safe_load(Path("./charmcraft.yaml").read_text())
 APP_NAME = METADATA["name"]
 RESOURCES = {
     "blackbox-exporter-image": METADATA["resources"]["blackbox-exporter-image"]["upstream-source"]
+}
+
+# Probe configuration to test blackbox probing functionality
+BLACKBOX_PROBES = {
+    "scrape_configs": [
+        {
+            "job_name": "prometheus-website",
+            "metrics_path": "/probe",
+            "params": {"module": ["http_2xx"]},
+            "static_configs": [{"targets": ["http://prometheus.io", "https://prometheus.io"]}],
+        }
+    ]
 }
 
 
@@ -179,6 +191,12 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
         timeout=1000,
     )
 
+    # Configure blackbox probes
+    await ops_test.model.applications[APP_NAME].set_config(
+        {"probes_file": yaml.dump(BLACKBOX_PROBES)}
+    )
+    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=300)
+
 
 @pytest.mark.setup
 @pytest.mark.abort_on_fail
@@ -276,3 +294,24 @@ async def test_metrics_endpoint_all_units(ops_test: OpsTest):
     logger.info(
         f"All {len(blackbox_targets)} blackbox-exporter targets are healthy in Prometheus"
     )
+
+
+async def test_probes_all_units(ops_test: OpsTest):
+    """Check that blackbox probes work on all units when service mesh is enabled."""
+    assert ops_test.model is not None
+
+    app = ops_test.model.applications[APP_NAME]
+    expected_unit_count = len(app.units)
+
+    # Test that each unit can execute probes
+    for unit_num in range(expected_unit_count):
+        # Test probing an external target (prometheus.io)
+        result = await can_blackbox_probe(
+            ops_test,
+            APP_NAME,
+            unit_num,
+            target="http://prometheus.io",
+            module="http_2xx",
+        )
+        assert result, f"Probe failed on unit {APP_NAME}/{unit_num}"
+        logger.info(f"Probe successful on unit {APP_NAME}/{unit_num}")

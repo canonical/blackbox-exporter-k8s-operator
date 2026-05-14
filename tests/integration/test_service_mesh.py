@@ -36,6 +36,7 @@ def get_istio_ingress_ip(ops_test: OpsTest, app_name: str = "istio-ingress") -> 
         plural="gateways",
     )
     client = Client()
+    assert ops_test.model_name is not None
     gateway = client.get(gateway_resource, app_name, namespace=ops_test.model_name)
     if gateway.status and gateway.status.get("addresses"):  # type: ignore
         return gateway.status["addresses"][0]["value"]  # type: ignore

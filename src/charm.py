@@ -9,6 +9,7 @@ import socket
 from typing import Dict, cast
 from urllib.parse import urlparse
 
+from charmlibs.interfaces.service_mesh import ServiceMeshConsumer, UnitPolicy
 from charms.blackbox_exporter_k8s.v0.blackbox_probes import BlackboxProbesRequirer
 from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
 from charms.grafana_k8s.v0.grafana_dashboard import GrafanaDashboardProvider
@@ -123,6 +124,17 @@ class BlackboxExporterCharm(CharmBase):
         )
         self._grafana_dashboard_provider = GrafanaDashboardProvider(charm=self)
         self._log_forwarding = LogForwarder(self, relation_name="logging")
+
+        # Service mesh integration
+        self.mesh = ServiceMeshConsumer(
+            self,
+            policies=[
+                UnitPolicy(
+                    relation="self-metrics-endpoint",
+                    ports=[self._port],
+                ),
+            ],
+        )
 
         self.framework.observe(self.ingress.on.ready, self._handle_ingress)
         self.framework.observe(self.ingress.on.revoked, self._handle_ingress)

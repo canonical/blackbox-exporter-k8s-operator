@@ -119,19 +119,19 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
     await ops_test.model.deploy(
         "istio-k8s",
         application_name="istio",
-        channel="latest/edge",
+        channel="2/edge",
         trust=True,
     )
     await ops_test.model.deploy(
         "istio-beacon-k8s",
         application_name="istio-beacon",
-        channel="latest/edge",
+        channel="2/edge",
         trust=True,
     )
     await ops_test.model.deploy(
         "istio-ingress-k8s",
         application_name="istio-ingress",
-        channel="latest/edge",
+        channel="2/edge",
         trust=True,
     )
 

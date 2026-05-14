@@ -6,17 +6,17 @@
 
 import json
 import logging
+import time
+import urllib.request
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Set
 
 import pytest
-import requests
 import yaml
 from helpers import get_unit_address
 from lightkube import Client
 from lightkube.generic_resource import create_namespaced_resource
 from pytest_operator.plugin import OpsTest
-from tenacity import retry, stop_after_attempt, wait_fixed
 
 logger = logging.getLogger(__name__)
 
@@ -73,29 +73,61 @@ async def service_mesh(
     await ops_test.model.wait_for_idle(status="active", timeout=1000)
 
 
-async def get_prometheus_targets_from_client_pod(
+async def get_prometheus_targets(
     ops_test: OpsTest,
-    source_unit: str,
     prometheus_app: str = "prometheus",
+    unit_num: int = 0,
 ) -> Dict[str, Any]:
-    """Get Prometheus scrape targets from inside a pod (within the cluster)."""
-    prometheus_url = await get_unit_address(ops_test, prometheus_app, 0)
-    url = f"http://{prometheus_url}:9090/api/v1/targets"
+    """Get Prometheus scrape targets."""
+    address = await get_unit_address(ops_test, prometheus_app, unit_num)
+    url = f"http://{address}:9090/api/v1/targets"
+    response = urllib.request.urlopen(url, data=None, timeout=10.0)
+    if response.code != 200:
+        raise RuntimeError(f"Failed to get Prometheus targets: {response.code}")
+    response_data = response.read().decode("utf-8")
+    response_json = json.loads(response_data)
+    if response_json.get("status") != "success":
+        raise RuntimeError(f"Prometheus API returned error: {response_json}")
+    return response_json.get("data", {})
 
-    rc, stdout, stderr = await ops_test.juju(
-        "ssh",
-        "--container",
-        source_unit.split("/")[0],
-        source_unit,
-        "curl",
-        "-s",
-        url,
-    )
-    assert rc == 0, f"Failed to curl prometheus: {stderr}"
-    response_json = json.loads(stdout)
 
-    assert response_json["status"] == "success"
-    return response_json["data"]
+def get_blackbox_targets_from_prometheus(
+    targets_data: Dict[str, Any],
+) -> List[Dict[str, Any]]:
+    """Filter Prometheus targets to get only blackbox-exporter targets."""
+    active_targets = targets_data.get("activeTargets", [])
+    return [
+        target
+        for target in active_targets
+        if target.get("discoveredLabels", {}).get("juju_charm") == "blackbox-exporter-k8s"
+    ]
+
+
+def get_blackbox_unit_addresses_from_targets(
+    blackbox_targets: List[Dict[str, Any]],
+) -> Set[str]:
+    """Extract the unit addresses from blackbox targets."""
+    addresses = set()
+    for target in blackbox_targets:
+        # The scrapePool contains the target address like "blackbox-exporter-k8s-0.blackbox..."
+        # or we can get it from labels
+        labels = target.get("labels", {})
+        instance = labels.get("instance", "")
+        if instance:
+            # instance is typically "ip:port", extract just the ip/hostname
+            address = instance.split(":")[0]
+            addresses.add(address)
+    return addresses
+
+
+async def get_ingress_metrics(ops_test: OpsTest) -> str:
+    """Get metrics through the istio-ingress endpoint."""
+    ingress_address = get_istio_ingress_ip(ops_test, "istio-ingress")
+    proxied_endpoint = f"http://{ingress_address}/{ops_test.model_name}-{APP_NAME}/metrics"
+    response = urllib.request.urlopen(proxied_endpoint, data=None, timeout=10.0)
+    if response.code != 200:
+        raise RuntimeError(f"Failed to get metrics through ingress: {response.code}")
+    return response.read().decode("utf-8")
 
 
 @pytest.mark.setup
@@ -170,6 +202,23 @@ async def test_integrate(ops_test: OpsTest):
 
 @pytest.mark.setup
 @pytest.mark.abort_on_fail
+async def test_scale_up(ops_test: OpsTest):
+    """Scale up the blackbox-exporter charm to multiple units."""
+    assert ops_test.model is not None
+
+    app = ops_test.model.applications[APP_NAME]
+    await app.scale(3)
+
+    await ops_test.model.wait_for_idle(
+        apps=[APP_NAME],
+        status="active",
+        timeout=1000,
+        wait_for_exact_units=3,
+    )
+
+
+@pytest.mark.setup
+@pytest.mark.abort_on_fail
 async def test_enable_service_mesh(ops_test: OpsTest):
     """Enable service mesh.
 
@@ -189,23 +238,41 @@ async def test_enable_service_mesh(ops_test: OpsTest):
 async def test_ingress(ops_test: OpsTest):
     """Check the ingress integration by checking if blackbox is reachable through istio-ingress."""
     assert ops_test.model is not None
-    ingress_address = get_istio_ingress_ip(ops_test, "istio-ingress")
-    proxied_endpoint = f"http://{ingress_address}/{ops_test.model_name}-{APP_NAME}"
-    response = requests.get(f"{proxied_endpoint}/metrics")
-    assert response.status_code == 200
+    metrics = await get_ingress_metrics(ops_test)
+    assert "blackbox_exporter_build_info" in metrics, "Expected blackbox metrics not found"
 
 
-@retry(wait=wait_fixed(10), stop=stop_after_attempt(6))
-async def test_metrics_endpoint(ops_test: OpsTest):
-    """Check that blackbox appears in the Prometheus scrape targets when mesh is enabled."""
+@pytest.mark.abort_on_fail
+async def test_metrics_endpoint_all_units(ops_test: OpsTest):
+    """Check that all blackbox units appear in Prometheus scrape targets when mesh is enabled."""
     assert ops_test.model is not None
 
-    # Query from inside the prometheus pod when service mesh is enabled
-    source_unit = "prometheus/0"
-    targets = await get_prometheus_targets_from_client_pod(ops_test, source_unit)
-    blackbox_targets = [
-        target
-        for target in targets["activeTargets"]
-        if target["discoveredLabels"].get("juju_charm") == "blackbox-exporter-k8s"
+    # Wait for Prometheus to scrape the targets
+    time.sleep(60)
+
+    # Get all blackbox unit addresses from the model
+    app = ops_test.model.applications[APP_NAME]
+    expected_unit_count = len(app.units)
+    assert expected_unit_count == 3, f"Expected 3 units, got {expected_unit_count}"
+
+    # Query Prometheus for targets
+    targets_data = await get_prometheus_targets(ops_test, "prometheus")
+    blackbox_targets = get_blackbox_targets_from_prometheus(targets_data)
+
+    # Check that we have targets for all units
+    assert len(blackbox_targets) >= expected_unit_count, (
+        f"Expected at least {expected_unit_count} blackbox targets in Prometheus, "
+        f"got {len(blackbox_targets)}"
+    )
+
+    # Verify all targets are healthy
+    unhealthy_targets = [
+        target for target in blackbox_targets if target.get("health") != "up"
     ]
-    assert blackbox_targets, "Blackbox exporter target not found in Prometheus"
+    assert not unhealthy_targets, (
+        f"Some blackbox targets are not healthy: {unhealthy_targets}"
+    )
+
+    logger.info(
+        f"All {len(blackbox_targets)} blackbox-exporter targets are healthy in Prometheus"
+    )

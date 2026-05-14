@@ -3,7 +3,7 @@
 [project]
 name = "blackbox-exporter-k8s"
 version = "0.0"
-requires-python = "~=3.8"
+requires-python = ">=3.10"
 
 dependencies = [
   "ops",
@@ -12,6 +12,7 @@ dependencies = [
   "lightkube-models",  # observability_libs
   "jsonschema", # traefik_k8s, tls_certificates
   "cosl",
+  "charmlibs-interfaces-service-mesh",  # service_mesh
 ]
 
 [project.optional-dependencies]
@@ -70,7 +71,7 @@ convention = "google"
 # Static analysis tools configuration
 [tool.pyright]
 extraPaths = ["src", "lib"]
-pythonVersion = "3.8"
+pythonVersion = "3.10"
 pythonPlatform = "All"
 
 [tool.pytest.ini_options]

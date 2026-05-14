@@ -66,7 +66,12 @@ provides:
     optional: true
     description: |
       Forwards the built-in Grafana dashboard(s) for monitoring Blackbox.
-
+  provide-cmr-mesh:
+    interface: cross_model_mesh
+    description: |
+      Access a cross-model application from this charm via the service mesh.
+      This relation provides additional data required by the service mesh to enforce
+      cross-model authorization policies.
 
 requires:
   logging:
@@ -91,6 +96,17 @@ requires:
     optional: true
     description: |
           Receive a list of probes (server address and probing method) from the provider to query.
+  service-mesh:
+    limit: 1
+    interface: service_mesh
+    description: |
+      Subscribe this charm into a service mesh and create authorization policies.
+  require-cmr-mesh:
+    interface: cross_model_mesh
+    description: |
+      Allow a cross-model application access to this charm via the service mesh.
+      This relation provides additional data required by the service mesh to enforce
+      cross-model authorization policies.
 
 config:
   options:

@@ -9,6 +9,7 @@ import socket
 from typing import Dict, cast
 from urllib.parse import urlparse
 
+import ops
 from charmlibs.interfaces.service_mesh import ServiceMeshConsumer, UnitPolicy
 from charms.blackbox_exporter_k8s.v0.blackbox_probes import BlackboxProbesRequirer
 from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
@@ -150,6 +151,12 @@ class BlackboxExporterCharm(CharmBase):
                     "protocols, including HTTP, HTTPS, DNS, TCP, ICMP and gRPC."
                 ),
             ),
+        )
+
+        self.charm_tracing = ops.tracing.Tracing(
+            self,
+            tracing_relation_name="charm-tracing",
+            ca_relation_name="receive-ca-cert",
         )
 
     def _resource_reqs_from_config(self) -> ResourceRequirements:

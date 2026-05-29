@@ -44,7 +44,6 @@ parts:
     override-build: |
       craftctl default
       git describe --always > $CRAFT_PART_INSTALL/version
-    
 
 containers:
   blackbox:

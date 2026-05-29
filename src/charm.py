@@ -9,7 +9,7 @@ import socket
 from typing import Dict, cast
 from urllib.parse import urlparse
 
-import ops
+import ops_tracing
 from charmlibs.interfaces.service_mesh import ServiceMeshConsumer, UnitPolicy
 from charms.blackbox_exporter_k8s.v0.blackbox_probes import BlackboxProbesRequirer
 from charms.catalogue_k8s.v1.catalogue import CatalogueConsumer, CatalogueItem
@@ -153,7 +153,7 @@ class BlackboxExporterCharm(CharmBase):
             ),
         )
 
-        self.charm_tracing = ops.tracing.Tracing(
+        self.charm_tracing = ops_tracing.Tracing(
             self,
             tracing_relation_name="charm-tracing",
             ca_relation_name="receive-ca-cert",

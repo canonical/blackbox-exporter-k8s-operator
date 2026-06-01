@@ -8,6 +8,11 @@ can be copied to other repos (or eventually extracted into a shared test library
 companion `test_charm_tracing.py` is the charm-specific orchestration.
 """
 
+# TODO(#97): Temporary jubilant/sync helpers, split from the OpsTest/async
+# helpers.py. Merge into a single generic helpers module once the integration
+# suite finishes migrating to jubilant.
+# https://github.com/canonical/blackbox-exporter-k8s-operator/issues/97
+
 from typing import List, Set, cast
 
 import jubilant

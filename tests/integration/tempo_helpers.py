@@ -4,7 +4,7 @@
 """Charm-agnostic helpers for deploying a monolithic Tempo stack and querying ingested traces.
 
 This module intentionally contains no references to any specific charm under test, so it
-can be copied to other repos (or eventually extracted into a shared fleet test library)
+can be copied to other repos (or eventually extracted into a shared test library)
 verbatim. The companion `test_charm_tracing.py` is the charm-specific orchestration.
 
 The S3 backend is `seaweedfs-k8s`, which replaces the older minio + s3-integrator pattern.

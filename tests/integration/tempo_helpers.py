@@ -4,15 +4,9 @@
 """Charm-agnostic helpers for deploying a monolithic Tempo stack and querying ingested traces.
 
 This module intentionally contains no references to any specific charm under test, so it
-can be copied to other repos (or eventually extracted into a shared fleet test library)
-verbatim. The companion `test_charm_tracing.py` is the charm-specific orchestration.
-
-The S3 backend is `seaweedfs-k8s`, which replaces the older minio + s3-integrator pattern.
-See the inline comment on S3_APP for the naming constraint that makes seaweedfs work
-across both microk8s and Canonical Kubernetes environments.
+can be copied to other repos (or eventually extracted into a shared test library). The
+companion `test_charm_tracing.py` is the charm-specific orchestration.
 """
-
-from __future__ import annotations
 
 from typing import List, Set, cast
 
@@ -32,8 +26,7 @@ INTEGRATION_TESTERS_CHANNEL = "dev/edge"
 def deploy_monolithic_tempo_cluster(juju: Juju) -> None:
     """Deploy a monolithic Tempo cluster (coordinator + worker + S3 backend).
 
-    Uses `seaweedfs-k8s` as a lightweight S3 backend (replaces the older minio +
-    s3-integrator pair; minio is no longer maintained upstream).
+    Uses `seaweedfs-k8s` as a lightweight S3 backend.
     """
     juju.deploy(
         "tempo-worker-k8s",
@@ -53,10 +46,7 @@ def deploy_monolithic_tempo_cluster(juju: Juju) -> None:
     juju.integrate(f"{TEMPO}:s3", S3_APP)
 
     juju.wait(
-        lambda status: (
-            jubilant.all_agents_idle(status, TEMPO, TEMPO_WORKER, S3_APP)
-            and jubilant.all_active(status, TEMPO, TEMPO_WORKER, S3_APP)
-        ),
+        lambda status: jubilant.all_active(status, TEMPO, TEMPO_WORKER, S3_APP),
         timeout=1000,
     )
 

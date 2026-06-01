@@ -79,17 +79,13 @@ def test_deploy_blackbox_and_tempo(juju: Juju, charm_under_test: str) -> None:
 def test_verify_charm_tracing(juju: Juju) -> None:
     """Assert that the blackbox charm's spans actually reach Tempo."""
     # GIVEN update-status fires every 5s so a charm-tracing span is emitted quickly
-    juju.cli("model-config", "update-status-hook-interval=5s")
+    juju.model_config({"update-status-hook-interval": "5s"})
 
-    try:
-        # WHEN we query Tempo for the set of service.name values it has ingested
-        services = get_ingested_traces_tag_values(
-            get_app_ip_address(juju, TEMPO), tls=False, tag="service.name"
-        )
-        # THEN our charm appears among them
-        assert APP_NAME in services, (
-            f"expected {APP_NAME!r} in ingested services, got: {sorted(services)}"
-        )
-    finally:
-        # Reset the update-status interval to a sane default for subsequent tests.
-        juju.cli("model-config", "update-status-hook-interval=5m")
+    # WHEN we query Tempo for the set of service.name values it has ingested
+    services = get_ingested_traces_tag_values(
+        get_app_ip_address(juju, TEMPO), tls=False, tag="service.name"
+    )
+    # THEN our charm appears among them
+    assert APP_NAME in services, (
+        f"expected {APP_NAME!r} in ingested services, got: {sorted(services)}"
+    )

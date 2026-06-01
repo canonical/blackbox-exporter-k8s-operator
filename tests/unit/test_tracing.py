@@ -8,7 +8,7 @@ from unittest.mock import patch
 import pytest
 from ops import testing
 
-pytestmark = pytest.mark.usefixtures("patch_charm_externalities")
+pytestmark = pytest.mark.usefixtures("patch_all")
 
 
 @pytest.mark.parametrize("tls", (True, False))

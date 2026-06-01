@@ -100,7 +100,7 @@ class TestWithoutInitialHooks(unittest.TestCase):
         self.assertEqual(self.harness.model.unit.name, "blackbox-exporter-k8s/0")
 
 
-@pytest.mark.usefixtures("patch_charm_externalities")
+@pytest.mark.usefixtures("patch_all")
 def test_charm_starts_without_charm_tracing_relation(context, container):
     """The charm should reach active status without a tracing relation."""
     # GIVEN a charm with no tracing relation

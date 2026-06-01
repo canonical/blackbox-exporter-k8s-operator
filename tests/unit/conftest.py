@@ -21,7 +21,7 @@ VERSION_EXEC = testing.Exec(
 
 
 @pytest.fixture
-def patch_charm_externalities():
+def patch_all():
     """Patch external dependencies so scenario tests exercise Python logic in isolation.
 
     Stubs out the BlackboxExporter HTTP reload, container config push, lightkube

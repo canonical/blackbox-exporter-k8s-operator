@@ -38,7 +38,7 @@ dev = [
   "pytest-operator",
   "pytest-httpserver",
   "sh",
-  # Integration (charm tracing — newer jubilant-based pattern, per parca-k8s)
+  # Integration (charm tracing — newer jubilant-based pattern)
   "jubilant",
   "pytest-jubilant",
   "tenacity",

@@ -13,8 +13,8 @@ from typing import Any, Dict, List, Set
 
 import pytest
 import yaml
-from jubilant import Juju
 from helpers import can_blackbox_probe, get_unit_address
+from jubilant import Juju
 from lightkube import Client
 from lightkube.generic_resource import create_namespaced_resource
 from pytest_operator.plugin import OpsTest

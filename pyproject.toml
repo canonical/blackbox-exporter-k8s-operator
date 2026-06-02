@@ -38,6 +38,7 @@ dev = [
   "pytest-operator",
   "pytest-httpserver",
   "sh",
+  "jubilant",
 ]
 
 # Testing tools configuration

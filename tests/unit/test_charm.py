@@ -101,9 +101,9 @@ class TestWithoutInitialHooks(unittest.TestCase):
 
 
 @pytest.mark.usefixtures("patch_all")
-def test_charm_starts_without_charm_tracing_relation(context, container):
-    """The charm should reach active status without a tracing relation."""
-    # GIVEN a charm with no tracing relation
+def test_smoke(context, container):
+    """Smoke test: the charm boots to active status with no relations."""
+    # GIVEN a charm with no relations
     state_in = testing.State(leader=True, containers=[container])
     # WHEN pebble_ready fires
     state_out = context.run(context.on.pebble_ready(container), state_in)

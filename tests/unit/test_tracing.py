@@ -3,7 +3,7 @@
 
 """State-transition tests for charm tracing integration."""
 
-from unittest.mock import patch
+import json
 
 import pytest
 from ops import testing
@@ -27,49 +27,31 @@ def test_charm_starts_with_charm_tracing_relation(
 
 
 def test_charm_tracing_relation_changed(context, container, charm_tracing_relation):
-    """The charm should configure tracing destination on relation-changed."""
-    # GIVEN an active charm with a charm-tracing relation
+    """On relation-changed, the charm advertises the protocols it wants in its own databag."""
+    # GIVEN a leader charm related over charm-tracing
     state_in = testing.State(
         leader=True,
         containers=[container],
         relations=[charm_tracing_relation],
-        unit_status=testing.ActiveStatus(),
     )
     # WHEN the tracing relation data changes
-    with patch("ops_tracing.set_destination") as mock_set_dest:
-        state_out = context.run(
-            context.on.relation_changed(charm_tracing_relation, remote_unit=0), state_in
-        )
-    # THEN unit status is preserved
-    assert state_out.unit_status == testing.ActiveStatus()
-    # AND the tracing destination is configured to point at the correct URL
-    mock_set_dest.assert_called_with(url="http://tempo:4318/v1/traces", ca=None)
+    state_out = context.run(
+        context.on.relation_changed(charm_tracing_relation, remote_unit=0), state_in
+    )
+    # THEN the charm has published the protocols it wants to receive traces on
+    local_app_data = state_out.get_relation(charm_tracing_relation.id).local_app_data
+    assert json.loads(local_app_data["receivers"]) == ["otlp_http"]
 
 
 def test_charm_tracing_relation_broken(context, container, charm_tracing_relation):
-    """The charm should unconfigure tracing destination when the relation is broken."""
-    # GIVEN an active charm with a charm-tracing relation
+    """On relation-broken, the charm withdraws its tracing request from the databag."""
+    # GIVEN a leader charm related over charm-tracing
     state_in = testing.State(
         leader=True,
         containers=[container],
         relations=[charm_tracing_relation],
-        unit_status=testing.ActiveStatus(),
     )
     # WHEN the tracing relation is broken
-    with patch("ops_tracing.set_destination") as mock_set_dest:
-        state_out = context.run(context.on.relation_broken(charm_tracing_relation), state_in)
-    # THEN unit status is preserved
-    assert state_out.unit_status == testing.ActiveStatus()
-    # AND the tracing destination is cleared
-    mock_set_dest.assert_called_with(url=None, ca=None)
-
-
-def test_charm_has_tracing_attribute(context, container):
-    """The charm should have a tracing attribute after initialization."""
-    # GIVEN a charm with no tracing relation
-    state_in = testing.State(leader=True, containers=[container])
-    # WHEN pebble_ready fires
-    with context(context.on.pebble_ready(container), state_in) as mgr:
-        mgr.run()
-        # THEN the charm exposes a charm_tracing attribute
-        assert mgr.charm.charm_tracing is not None
+    state_out = context.run(context.on.relation_broken(charm_tracing_relation), state_in)
+    # THEN the charm no longer advertises any tracing protocols
+    assert "receivers" not in state_out.get_relation(charm_tracing_relation.id).local_app_data

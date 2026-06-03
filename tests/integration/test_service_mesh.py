@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Set
 import pytest
 import yaml
 from helpers import can_blackbox_probe, get_unit_address
+from jubilant import Juju
 from lightkube import Client
 from lightkube.generic_resource import create_namespaced_resource
 from pytest_operator.plugin import OpsTest
@@ -157,25 +158,30 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
     await ops_test.model.deploy(
         "prometheus-k8s",
         application_name="prometheus",
-        channel="1/edge",
+        channel="dev/edge",
         trust=True,
     )
+    juju = Juju()
+    model_info = juju.show_model()
+    istio_config = {} if model_info.cloud == "microk8s" else {"platform": ""}
+
     await ops_test.model.deploy(
         "istio-k8s",
         application_name="istio",
-        channel="2/edge",
+        channel="dev/edge",
         trust=True,
+        config=istio_config,
     )
     await ops_test.model.deploy(
         "istio-beacon-k8s",
         application_name="istio-beacon",
-        channel="2/edge",
+        channel="dev/edge",
         trust=True,
     )
     await ops_test.model.deploy(
         "istio-ingress-k8s",
         application_name="istio-ingress",
-        channel="2/edge",
+        channel="dev/edge",
         trust=True,
     )
 
@@ -284,16 +290,10 @@ async def test_metrics_endpoint_all_units(ops_test: OpsTest):
     )
 
     # Verify all targets are healthy
-    unhealthy_targets = [
-        target for target in blackbox_targets if target.get("health") != "up"
-    ]
-    assert not unhealthy_targets, (
-        f"Some blackbox targets are not healthy: {unhealthy_targets}"
-    )
+    unhealthy_targets = [target for target in blackbox_targets if target.get("health") != "up"]
+    assert not unhealthy_targets, f"Some blackbox targets are not healthy: {unhealthy_targets}"
 
-    logger.info(
-        f"All {len(blackbox_targets)} blackbox-exporter targets are healthy in Prometheus"
-    )
+    logger.info(f"All {len(blackbox_targets)} blackbox-exporter targets are healthy in Prometheus")
 
 
 async def test_probes_all_units(ops_test: OpsTest):

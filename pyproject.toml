@@ -6,7 +6,7 @@ version = "0.0"
 requires-python = "~=3.14.0"
 
 dependencies = [
-  "ops",
+  "ops[tracing]",
   "pyyaml",
   "lightkube>=0.11",  # observability_libs
   "lightkube-models",  # observability_libs
@@ -38,7 +38,10 @@ dev = [
   "pytest-operator",
   "pytest-httpserver",
   "sh",
+  # Integration (charm tracing — newer jubilant-based pattern)
   "jubilant",
+  "pytest-jubilant",
+  "tenacity",
 ]
 
 # Testing tools configuration

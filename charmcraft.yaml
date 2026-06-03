@@ -39,7 +39,7 @@ parts:
   charm:
     source: .
     plugin: uv
-    build-packages: [git]
+    build-packages: [git, cargo]
     build-snaps: [astral-uv]
     override-build: |
       craftctl default
@@ -107,6 +107,18 @@ requires:
       Allow a cross-model application access to this charm via the service mesh.
       This relation provides additional data required by the service mesh to enforce
       cross-model authorization policies.
+  charm-tracing:
+      interface: tracing
+      limit: 1
+      optional: true
+      description: |
+        Enables sending charm traces to a distributed tracing backend such as Tempo.
+  receive-ca-cert:
+      interface: certificate_transfer
+      limit: 1
+      optional: true
+      description: |
+        Receives a CA certificate to validate TLS connections for charm tracing.
 
 config:
   options:

@@ -6,8 +6,10 @@ import unittest
 from unittest.mock import patch
 
 import ops
+import pytest
 import yaml
 from helpers import k8s_resource_multipatch, tautology
+from ops import testing
 from ops.model import ActiveStatus, BlockedStatus
 from ops.testing import Harness
 
@@ -96,3 +98,14 @@ class TestWithoutInitialHooks(unittest.TestCase):
         self.assertIsInstance(self.harness.charm.unit.status, ops.model.ActiveStatus)
 
         self.assertEqual(self.harness.model.unit.name, "blackbox-exporter-k8s/0")
+
+
+@pytest.mark.usefixtures("patch_all")
+def test_smoke(context, container):
+    """Smoke test: the charm boots to active status with no relations."""
+    # GIVEN a charm with no relations
+    state_in = testing.State(leader=True, containers=[container])
+    # WHEN pebble_ready fires
+    state_out = context.run(context.on.pebble_ready(container), state_in)
+    # THEN the charm reaches ActiveStatus
+    assert state_out.unit_status == testing.ActiveStatus()

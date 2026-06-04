@@ -56,6 +56,16 @@ def get_istio_ingress_ip(ops_test: OpsTest, app_name: str = "istio-ingress") -> 
     raise ValueError(f"No ingress address found for {app_name}")
 
 
+async def resolve_units_in_error(ops_test: OpsTest):
+    """Resolve any units in error state with retry."""
+    assert ops_test.model is not None
+    for app in ops_test.model.applications.values():
+        for unit in app.units:
+            if unit.workload_status == "error":
+                logger.info(f"Resolving error on {unit.name}")
+                await unit.resolved(retry=True)
+
+
 async def service_mesh(
     enable: bool,
     ops_test: OpsTest,
@@ -67,12 +77,19 @@ async def service_mesh(
     This puts the entire model, that the beacon app is part of, on mesh.
     This integrates the apps_to_be_related_with_beacon with the beacon app
     via the ``service-mesh`` relation.
+
+    Note: Enabling the mesh causes Istio to intercept all traffic in the namespace,
+    which can temporarily disrupt Juju agent connections to the controller. We use
+    raise_on_error=False and resolve any units that enter error state.
     """
     assert ops_test.model is not None
     await ops_test.model.applications[beacon_app_name].set_config(
         {"model-on-mesh": str(enable).lower()}
     )
-    await ops_test.model.wait_for_idle(status="active", timeout=1000)
+    # Allow errors during mesh reconfiguration - network disruption is expected
+    await ops_test.model.wait_for_idle(status="active", timeout=600, raise_on_error=False)
+    await resolve_units_in_error(ops_test)
+
     if enable:
         for app in apps_to_be_related_with_beacon:
             await ops_test.model.integrate(
@@ -83,7 +100,13 @@ async def service_mesh(
             await ops_test.model.applications[beacon_app_name].remove_relation(
                 "service-mesh", f"{app}:service-mesh"
             )
-    await ops_test.model.wait_for_idle(status="active", timeout=1000)
+
+    # Allow errors during integration - mesh traffic interception may cause transient failures
+    await ops_test.model.wait_for_idle(status="active", timeout=600, raise_on_error=False)
+    await resolve_units_in_error(ops_test)
+
+    # Final wait to confirm all units are stable
+    await ops_test.model.wait_for_idle(status="active", timeout=600)
 
 
 async def get_prometheus_targets(
@@ -213,13 +236,7 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
     )
 
     # Resolve any units in error state and retry
-    for app_name in ["istio", "istio-beacon", "istio-ingress"]:
-        app = ops_test.model.applications.get(app_name)
-        if app:
-            for unit in app.units:
-                if unit.workload_status == "error":
-                    logger.info(f"Resolving error on {unit.name}")
-                    await unit.resolved(retry=True)
+    await resolve_units_in_error(ops_test)
 
     # Final wait for all apps to be active
     await ops_test.model.wait_for_idle(

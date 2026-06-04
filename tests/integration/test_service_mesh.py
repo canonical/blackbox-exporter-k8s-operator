@@ -149,6 +149,7 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
     """Build and deploy the charm together with Istio service mesh components."""
     assert ops_test.model is not None
 
+    # Deploy non-istio apps
     await ops_test.model.deploy(
         charm_under_test,
         application_name=APP_NAME,
@@ -161,6 +162,9 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
         channel="dev/edge",
         trust=True,
     )
+
+    # Deploy istio-k8s first and wait for it to be ready before deploying
+    # istio-beacon and istio-ingress which depend on it
     juju = Juju()
     model_info = juju.show_model()
     istio_config = {} if model_info.cloud == "microk8s" else {"platform": ""}
@@ -172,6 +176,15 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
         trust=True,
         config=istio_config,
     )
+
+    # Wait for istio to be active before deploying dependent charms
+    await ops_test.model.wait_for_idle(
+        apps=["istio"],
+        status="active",
+        timeout=600,
+    )
+
+    # Now deploy the charms that depend on istio control plane
     await ops_test.model.deploy(
         "istio-beacon-k8s",
         application_name="istio-beacon",

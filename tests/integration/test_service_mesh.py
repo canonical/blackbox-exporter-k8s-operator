@@ -198,6 +198,7 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
         trust=True,
     )
 
+    # First attempt - allow errors since istio components may need retries
     await ops_test.model.wait_for_idle(
         apps=[
             APP_NAME,
@@ -207,7 +208,30 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
             "istio-ingress",
         ],
         status="active",
-        timeout=1000,
+        timeout=600,
+        raise_on_error=False,
+    )
+
+    # Resolve any units in error state and retry
+    for app_name in ["istio", "istio-beacon", "istio-ingress"]:
+        app = ops_test.model.applications.get(app_name)
+        if app:
+            for unit in app.units:
+                if unit.workload_status == "error":
+                    logger.info(f"Resolving error on {unit.name}")
+                    await unit.resolved(retry=True)
+
+    # Final wait for all apps to be active
+    await ops_test.model.wait_for_idle(
+        apps=[
+            APP_NAME,
+            "prometheus",
+            "istio",
+            "istio-beacon",
+            "istio-ingress",
+        ],
+        status="active",
+        timeout=600,
     )
 
     # Configure blackbox probes

@@ -208,7 +208,7 @@ class BlackboxExporterCharm(CharmBase):
         # Make sure the external url is valid
         if external_url := self._external_url:
             parsed = urlparse(external_url)
-            if not (parsed.scheme in ["http"] and parsed.hostname):
+            if not (parsed.scheme in ["http", "https"] and parsed.hostname):
                 # This shouldn't happen
                 logger.error(
                     "Invalid external url: %s; must include scheme and hostname.",

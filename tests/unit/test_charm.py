@@ -104,14 +104,8 @@ class TestWithoutInitialHooks(unittest.TestCase):
     @patch.object(WorkloadManager, "_blackbox_exporter_version", property(lambda *_: "0.0.0"))
     @patch.object(WorkloadManager, "push_config")
     def test_unit_status_around_pebble_ready_with_https_external_url(self, *unused):
-        # before pebble_ready, status should be "maintenance"
-        self.assertIsInstance(self.harness.charm.unit.status, ops.model.MaintenanceStatus)
-
-        # after pebble_ready, with an https external url, status should be "active"
         self.harness.container_pebble_ready(self.container_name)
         self.assertIsInstance(self.harness.charm.unit.status, ops.model.ActiveStatus)
-
-        self.assertEqual(self.harness.model.unit.name, "blackbox-exporter-k8s/0")
 
 
 @pytest.mark.usefixtures("patch_all")

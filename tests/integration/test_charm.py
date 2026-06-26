@@ -42,7 +42,7 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
         ops_test.model.deploy(
             charm_under_test, resources=resources, application_name=app_name, trust=True
         ),
-        ops_test.model.deploy("traefik-k8s", "traefik", channel="latest/edge", trust=True),
+        ops_test.model.deploy("traefik-k8s", "traefik", channel="latest/candidate", trust=True),
     )
     await ops_test.model.wait_for_idle(apps=[app_name], status="active", timeout=1000)
     assert ops_test.model.applications[app_name].units[0].workload_status == "active"

@@ -29,6 +29,11 @@ parts:
     override-build: |
       craftctl default
       git describe --always > $CRAFT_PART_INSTALL/version
+  icon:
+    plugin: dump
+    source: .
+    stage:
+      - icon.svg
 
 containers:
   blackbox:

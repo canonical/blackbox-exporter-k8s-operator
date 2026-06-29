@@ -4,8 +4,8 @@ name: blackbox-exporter-k8s
 type: charm
 summary: Perform blackbox probes with a multitude of protocols.
 description: |
-  Blackbox Exporter K8s is a Juju charm that deploys and manages the Prometheus Blackbox
-  Exporter on Kubernetes, enabling blackbox probing of endpoints over HTTP(S), DNS, TCP, and
+  Blackbox Exporter K8s is a Juju charm that deploys and manages the Prometheus [Blackbox
+  Exporter] on Kubernetes, enabling blackbox probing of endpoints over HTTP(S), DNS, TCP, and
   ICMP. It is a complementary charm to the Canonical Observability Stack (COS), allowing
   operators to monitor the reachability and responsiveness of external services:
   https://documentation.ubuntu.com/observability
@@ -20,17 +20,17 @@ description: |
   - Built-in Grafana dashboards and Prometheus alert rules for self-monitoring.
   - Seamless integration with Prometheus, Grafana, and Loki through Juju relations.
   - Ingress support for external access through reverse proxies such as Traefik.
-  - Configurable Kubernetes resource limits for CPU and memory.
+
+  [Blackbox Exporter]: https://github.com/prometheus/blackbox_exporter
 
 links:
   documentation: https://documentation.ubuntu.com/observability/latest/
-  website: https://charmhub.io/blackbox-exporter-k8s
   source: https://github.com/canonical/blackbox-exporter-k8s-operator
   issues: https://github.com/canonical/blackbox-exporter-k8s-operator/issues
 
 assumes:
   - k8s-api
-  - juju >= 3.6  # Juju >= 3.4 needed for Pebble log forwarding
+  - juju >= 3.6 # Juju >= 3.4 needed for Pebble log forwarding
 
 platforms:
   ubuntu@26.04:amd64:
@@ -58,7 +58,7 @@ resources:
   blackbox-exporter-image:
     type: oci-image
     description: OCI image for Blackbox Exporter
-    upstream-source: ubuntu/blackbox-exporter@sha256:4cd7a2d79431e7b7b342c885330b4694e319bd9b061fbfbac0573d80743f6321  # oci-image tag: 0.28-26.04
+    upstream-source: ubuntu/blackbox-exporter@sha256:4cd7a2d79431e7b7b342c885330b4694e319bd9b061fbfbac0573d80743f6321 # oci-image tag: 0.28-26.04
 
 provides:
   self-metrics-endpoint:
@@ -100,7 +100,7 @@ requires:
     interface: blackbox_exporter_probes
     optional: true
     description: |
-          Receive a list of probes (server address and probing method) from the provider to query.
+      Receive a list of probes (server address and probing method) from the provider to query.
   service-mesh:
     limit: 1
     interface: service_mesh
@@ -113,17 +113,17 @@ requires:
       This relation provides additional data required by the service mesh to enforce
       cross-model authorization policies.
   charm-tracing:
-      interface: tracing
-      limit: 1
-      optional: true
-      description: |
-        Enables sending charm traces to a distributed tracing backend such as Tempo.
+    interface: tracing
+    limit: 1
+    optional: true
+    description: |
+      Enables sending charm traces to a distributed tracing backend such as Tempo.
   receive-ca-cert:
-      interface: certificate_transfer
-      limit: 1
-      optional: true
-      description: |
-        Receives a CA certificate to validate TLS connections for charm tracing.
+    interface: certificate_transfer
+    limit: 1
+    optional: true
+    description: |
+      Receives a CA certificate to validate TLS connections for charm tracing.
 
 config:
   options:

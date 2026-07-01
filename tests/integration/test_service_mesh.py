@@ -15,11 +15,11 @@ import pytest
 import yaml
 from helpers import can_blackbox_probe, get_unit_address
 from jubilant import Juju
-
-pytestmark = pytest.mark.xfail(reason="Flaky test - xfail to unblock track release")
 from lightkube import Client
 from lightkube.generic_resource import create_namespaced_resource
 from pytest_operator.plugin import OpsTest
+
+pytestmark = pytest.mark.xfail(reason="Flaky test - xfail to unblock track release")
 
 logger = logging.getLogger(__name__)
 

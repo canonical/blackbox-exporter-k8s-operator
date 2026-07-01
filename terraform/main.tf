@@ -7,6 +7,7 @@ resource "juju_application" "blackbox_exporter" {
   units       = var.units
 
   charm {
+    base     = var.base
     name     = "blackbox-exporter-k8s"
     channel  = var.channel
     revision = var.revision

@@ -20,12 +20,6 @@ This is a Terraform module facilitating the deployment of blackbox-exporter-k8s 
 
 No modules.
 
-## Resources
-
-| Name | Type |
-|------|------|
-| [juju_application.blackbox_exporter](https://registry.terraform.io/providers/juju/juju/latest/docs/resources/application) | resource |
-
 ## Inputs
 
 | Name | Description | Type | Default | Required |

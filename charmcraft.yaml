@@ -167,3 +167,4 @@ config:
 actions:
   show-config:
     description: Show Blackbox Exporter config file.
+    additionalProperties: false

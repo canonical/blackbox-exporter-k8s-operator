@@ -37,6 +37,7 @@ dev = [
   "pytest-jubilant",
   "pytest-httpserver",
   "tenacity",
+  "requests>=2.34.2",
 ]
 
 # Testing tools configuration

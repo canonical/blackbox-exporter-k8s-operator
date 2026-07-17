@@ -6,6 +6,7 @@
 import json
 import logging
 import urllib.request
+from pprint import pprint
 from typing import Any, Dict, Optional, Tuple
 
 import jubilant
@@ -67,6 +68,15 @@ def all_prometheus_targets_up(
     response_data = response.read().decode("utf-8")
     response_json = json.loads(response_data)
     targets = response_json.get("data", {}).get("activeTargets", [])
+
+    if not targets:
+        logger.warning("No scrape targets present")
+        return False
+
+    # Give some details about the targets that are down
+    targets_down = [target for target in targets if target["health"] != "up"]
+    logger.info("The following scrape targets are down: %s", pprint(targets_down))
+
     return all(target["health"] == "up" for target in targets)
 
 

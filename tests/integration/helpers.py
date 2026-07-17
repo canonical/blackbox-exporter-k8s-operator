@@ -8,21 +8,19 @@ import logging
 import urllib.request
 from typing import Any, Dict, Optional, Tuple
 
-from juju.unit import Unit
-from pytest_operator.plugin import OpsTest
+import jubilant
 
 logger = logging.getLogger(__name__)
 
 
-async def get_unit_address(ops_test: OpsTest, app_name: str, unit_num: int) -> str:
+def get_unit_address(juju: jubilant.Juju, app_name: str, unit_num: int) -> str:
     """Get private address of a unit."""
-    assert ops_test.model
-    status = await ops_test.model.get_status()  # noqa: F821
-    return status["applications"][app_name]["units"][f"{app_name}/{unit_num}"]["address"]
+    status = juju.status()
+    return status.apps[app_name].units[f"{app_name}/{unit_num}"].address
 
 
-async def is_blackbox_unit_up(ops_test: OpsTest, app_name: str, unit_num: int):
-    address = await get_unit_address(ops_test, app_name, unit_num)
+def is_blackbox_unit_up(juju: jubilant.Juju, app_name: str, unit_num: int):
+    address = get_unit_address(juju, app_name, unit_num)
     url = f"http://{address}:9115"
     logger.info("blackbox exporter public address: %s", url)
 
@@ -30,26 +28,22 @@ async def is_blackbox_unit_up(ops_test: OpsTest, app_name: str, unit_num: int):
     return response.code == 200
 
 
-async def is_blackbox_up(ops_test: OpsTest, app_name: str):
-    assert ops_test.model
-    application = ops_test.model.applications[app_name]
-    assert application
+def is_blackbox_up(juju: jubilant.Juju, app_name: str):
+    status = juju.status()
+    application = status.apps[app_name]
     return all(
-        [
-            await is_blackbox_unit_up(ops_test, app_name, unit_num)
-            for unit_num in range(len(application.units))
-        ]
+        is_blackbox_unit_up(juju, app_name, unit_num) for unit_num in range(len(application.units))
     )
 
 
-async def can_blackbox_probe(
-    ops_test: OpsTest,
+def can_blackbox_probe(
+    juju: jubilant.Juju,
     app_name: str,
     unit_num: int,
     target: Optional[str] = None,
     module: str = "http_2xx",
 ):
-    address = await get_unit_address(ops_test, app_name, unit_num)
+    address = get_unit_address(juju, app_name, unit_num)
     url = f"http://{address}:9115"
     if not target:
         target = f"{address}:9115"
@@ -60,12 +54,12 @@ async def can_blackbox_probe(
     return response.code == 200 and "probe_success 1" in str(response.read())
 
 
-async def all_prometheus_targets_up(
-    ops_test: OpsTest,
+def all_prometheus_targets_up(
+    juju: jubilant.Juju,
     app_name: str,
     unit_num: int = 0,
 ):
-    address = await get_unit_address(ops_test, app_name, unit_num)
+    address = get_unit_address(juju, app_name, unit_num)
     url = f"http://{address}:9090"
     response = urllib.request.urlopen(f"{url}/api/v1/targets", data=None)
     if response.code != 200:
@@ -76,35 +70,19 @@ async def all_prometheus_targets_up(
     return all(target["health"] == "up" for target in targets)
 
 
-async def get_blackbox_config_from_file(
-    ops_test: OpsTest, app_name: str, container_name: str, config_file_path: str
+def get_blackbox_config_from_file(
+    juju: jubilant.Juju, app_name: str, container_name: str, config_file_path: str
 ) -> Tuple[Optional[int], str, str]:
-    rc, stdout, stderr = await ops_test.juju(
-        "ssh", "--container", f"{container_name}", f"{app_name}/0", "cat", f"{config_file_path}"
-    )
-    return rc, stdout, stderr
+    stdout = juju.ssh(f"{app_name}/0", "cat", config_file_path, container=container_name)
+    return 0, stdout, ""
 
 
-async def deploy_literal_bundle(ops_test: OpsTest, bundle: str):
-    run_args = [
-        "juju",
-        "deploy",
-        "--trust",
-        "-m",
-        ops_test.model_name,
-        str(ops_test.render_bundle(bundle)),
-    ]
-
-    retcode, stdout, stderr = await ops_test.run(*run_args)
-    assert retcode == 0, f"Deploy failed: {(stderr or stdout).strip()}"
-    logger.info(stdout)
+def deploy_literal_bundle(juju: jubilant.Juju, bundle: str):
+    juju.cli("deploy", "--trust", str(bundle))
 
 
-async def get_traefik_proxied_endpoints(
-    ops_test: OpsTest, traefik_app: str = "traefik"
+def get_traefik_proxied_endpoints(
+    juju: jubilant.Juju, traefik_app: str = "traefik"
 ) -> Dict[str, Any]:
-    assert ops_test.model is not None
-    traefik_leader: Unit = ops_test.model.applications[traefik_app].units[0]  # type: ignore
-    action = await traefik_leader.run_action("show-proxied-endpoints")
-    action_result = await action.wait()
-    return json.loads(action_result.results["proxied-endpoints"])
+    result = juju.run(f"{traefik_app}/0", "show-proxied-endpoints")
+    return json.loads(result.results["proxied-endpoints"])

@@ -33,14 +33,9 @@ dev = [
   # Interface
   "pytest-interface-tester>0.3",
   # Integration
-  "juju",
-  "websockets<14.0",
-  "pytest-operator",
-  "pytest-httpserver",
-  "sh",
-  # Integration (charm tracing — newer jubilant-based pattern)
   "jubilant",
   "pytest-jubilant",
+  "pytest-httpserver",
   "tenacity",
 ]
 

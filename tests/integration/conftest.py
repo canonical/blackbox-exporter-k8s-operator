@@ -6,12 +6,13 @@ import functools
 import logging
 import os
 import socket
+import subprocess
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 
+import jubilant
 import pytest
-from pytest_operator.plugin import OpsTest
 
 PYTEST_HTTP_SERVER_PORT = 8000
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ store = Store()
 
 def timed_memoizer(func):
     @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         fname = func.__qualname__
         logger.info("Started: %s" % fname)
         start_time = datetime.now()
@@ -46,7 +47,7 @@ def timed_memoizer(func):
             ret = store[fname]
         else:
             logger.info("Return for {} not cached".format(fname))
-            ret = await func(*args, **kwargs)
+            ret = func(*args, **kwargs)
             store[fname] = ret
         logger.info("Finished: {} in: {} seconds".format(fname, datetime.now() - start_time))
         return ret
@@ -56,13 +57,21 @@ def timed_memoizer(func):
 
 @pytest.fixture(scope="module")
 @timed_memoizer
-async def charm_under_test(ops_test: OpsTest) -> Path:
+def charm_under_test() -> str:
     """Charm used for integration testing."""
     if charm_file := os.environ.get("CHARM_PATH"):
-        return Path(charm_file)
+        charm_path = Path(charm_file)
+        assert charm_path.exists(), f"CHARM_PATH={charm_file!r} does not exist"
+        return str(charm_path)
 
-    path_to_built_charm = await ops_test.build_charm(".", verbosity="debug")
-    return path_to_built_charm
+    subprocess.run(
+        ["charmcraft", "pack", "--verbosity=debug"],
+        check=True,
+        capture_output=False,
+    )
+    charms = sorted(Path(".").glob("*.charm"))
+    assert charms, "No .charm file found after charmcraft pack"
+    return str(charms[-1])
 
 
 @pytest.fixture(scope="session")
@@ -81,13 +90,13 @@ def httpserver_listen_address():
 
 
 @pytest.fixture(autouse=True, scope="module")
-async def setup_env(ops_test: OpsTest):
-    assert ops_test.model
-    # Prevent "update-status" from interfering with the test:
-    # - if fired "too quickly", traefik will flip between active/idle and maintenance;
-    # - make sure charm code does not rely on update-status for correct operation.
-    await ops_test.model.set_config(
-        {"update-status-hook-interval": "60m", "logging-config": "<root>=WARNING; unit=DEBUG"}
+def setup_env(juju: jubilant.Juju):
+    """Prevent update-status from interfering with the test."""
+    juju.model_config(
+        {
+            "update-status-hook-interval": "60m",
+            "logging-config": "<root>=WARNING; unit=DEBUG",
+        }
     )
 
 

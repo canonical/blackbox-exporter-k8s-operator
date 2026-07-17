@@ -15,10 +15,8 @@ import jubilant
 import pytest
 import yaml
 from helpers import can_blackbox_probe, get_unit_address
-from jubilant import Juju
 from lightkube import Client
 from lightkube.generic_resource import create_namespaced_resource
-from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +39,7 @@ BLACKBOX_PROBES = {
 }
 
 
-def get_istio_ingress_ip(ops_test: OpsTest, app_name: str = "istio-ingress") -> str:
+def get_istio_ingress_ip(juju: jubilant.Juju, app_name: str = "istio-ingress") -> str:
     """Get the istio-ingress public IP address from Kubernetes."""
     gateway_resource = create_namespaced_resource(
         group="gateway.networking.k8s.io",
@@ -50,26 +48,26 @@ def get_istio_ingress_ip(ops_test: OpsTest, app_name: str = "istio-ingress") -> 
         plural="gateways",
     )
     client = Client()
-    assert ops_test.model_name is not None
-    gateway = client.get(gateway_resource, app_name, namespace=ops_test.model_name)
+    model_name = juju.status().model.name
+    gateway = client.get(gateway_resource, app_name, namespace=model_name)
     if gateway.status and gateway.status.get("addresses"):  # type: ignore
         return gateway.status["addresses"][0]["value"]  # type: ignore
     raise ValueError(f"No ingress address found for {app_name}")
 
 
-async def resolve_units_in_error(ops_test: OpsTest):
+def resolve_units_in_error(juju: jubilant.Juju):
     """Resolve any units in error state with retry."""
-    assert ops_test.model is not None
-    for app in ops_test.model.applications.values():
-        for unit in app.units:
-            if unit.workload_status == "error":
-                logger.info(f"Resolving error on {unit.name}")
-                await unit.resolved(retry=True)
+    status = juju.status()
+    for app in status.apps.values():
+        for unit_name, unit in app.units.items():
+            if unit.workload_status.current == "error":
+                logger.info(f"Resolving error on {unit_name}")
+                juju.cli("resolved", unit_name)
 
 
-async def service_mesh(
+def service_mesh(
     enable: bool,
-    ops_test: OpsTest,
+    juju: jubilant.Juju,
     beacon_app_name: str,
     apps_to_be_related_with_beacon: List[str],
 ):
@@ -83,40 +81,39 @@ async def service_mesh(
     which can temporarily disrupt Juju agent connections to the controller. We use
     raise_on_error=False and resolve any units that enter error state.
     """
-    assert ops_test.model is not None
-    await ops_test.model.applications[beacon_app_name].set_config(
-        {"model-on-mesh": str(enable).lower()}
-    )
+    juju.config(beacon_app_name, {"model-on-mesh": str(enable).lower()})
     # Allow errors during mesh reconfiguration - network disruption is expected
-    await ops_test.model.wait_for_idle(status="active", timeout=600, raise_on_error=False)
-    await resolve_units_in_error(ops_test)
+    try:
+        juju.wait(jubilant.all_active, timeout=600, delay=5.0)
+    except TimeoutError:
+        pass
+    resolve_units_in_error(juju)
 
     if enable:
         for app in apps_to_be_related_with_beacon:
-            await ops_test.model.integrate(
-                f"{beacon_app_name}:service-mesh", f"{app}:service-mesh"
-            )
+            juju.integrate(f"{beacon_app_name}:service-mesh", f"{app}:service-mesh")
     else:
         for app in apps_to_be_related_with_beacon:
-            await ops_test.model.applications[beacon_app_name].remove_relation(
-                "service-mesh", f"{app}:service-mesh"
-            )
+            juju.remove_relation(f"{beacon_app_name}:service-mesh", f"{app}:service-mesh")
 
     # Allow errors during integration - mesh traffic interception may cause transient failures
-    await ops_test.model.wait_for_idle(status="active", timeout=600, raise_on_error=False)
-    await resolve_units_in_error(ops_test)
+    try:
+        juju.wait(jubilant.all_active, timeout=600, delay=5.0)
+    except TimeoutError:
+        pass
+    resolve_units_in_error(juju)
 
     # Final wait to confirm all units are stable
-    await ops_test.model.wait_for_idle(status="active", timeout=600)
+    juju.wait(jubilant.all_active, timeout=600)
 
 
-async def get_prometheus_targets(
-    ops_test: OpsTest,
+def get_prometheus_targets(
+    juju: jubilant.Juju,
     prometheus_app: str = "prometheus",
     unit_num: int = 0,
 ) -> Dict[str, Any]:
     """Get Prometheus scrape targets."""
-    address = await get_unit_address(ops_test, prometheus_app, unit_num)
+    address = get_unit_address(juju, prometheus_app, unit_num)
     url = f"http://{address}:9090/api/v1/targets"
     response = urllib.request.urlopen(url, data=None, timeout=10.0)
     if response.code != 200:
@@ -157,24 +154,21 @@ def get_blackbox_unit_addresses_from_targets(
     return addresses
 
 
-async def get_ingress_metrics(ops_test: OpsTest) -> str:
+def get_ingress_metrics(juju: jubilant.Juju) -> str:
     """Get metrics through the istio-ingress endpoint."""
-    ingress_address = get_istio_ingress_ip(ops_test, "istio-ingress")
-    proxied_endpoint = f"http://{ingress_address}/{ops_test.model_name}-{APP_NAME}/metrics"
+    ingress_address = get_istio_ingress_ip(juju, "istio-ingress")
+    model_name = juju.status().model.name
+    proxied_endpoint = f"http://{ingress_address}/{model_name}-{APP_NAME}/metrics"
     response = urllib.request.urlopen(proxied_endpoint, data=None, timeout=10.0)
     if response.code != 200:
         raise RuntimeError(f"Failed to get metrics through ingress: {response.code}")
     return response.read().decode("utf-8")
 
 
-@pytest.mark.setup
+@pytest.mark.juju_setup
 @pytest.mark.abort_on_fail
-async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
+def test_build_and_deploy(juju: jubilant.Juju, charm_under_test: str):
     """Build and deploy the charm together with Istio service mesh components."""
-    assert ops_test.model is not None
-
-    juju = Juju()
-
     # Deploy non-istio apps
     juju.deploy(
         str(charm_under_test),
@@ -210,15 +204,15 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
     )
 
     # Now deploy the charms that depend on istio control plane
-    await ops_test.model.deploy(
+    juju.deploy(
         "istio-beacon-k8s",
-        application_name="istio-beacon",
+        "istio-beacon",
         channel="dev/edge",
         trust=True,
     )
-    await ops_test.model.deploy(
+    juju.deploy(
         "istio-ingress-k8s",
-        application_name="istio-ingress",
+        "istio-ingress",
         channel="dev/edge",
         trust=True,
     )
@@ -231,7 +225,7 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
     )
 
     # Resolve any units in error state and retry
-    await resolve_units_in_error(ops_test)
+    resolve_units_in_error(juju)
 
     # Final wait for all apps to be active
     juju.wait(
@@ -249,52 +243,45 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
     )
 
     # Configure blackbox probes
-    await ops_test.model.applications[APP_NAME].set_config(
-        {"probes_file": yaml.dump(BLACKBOX_PROBES)}
-    )
-    await ops_test.model.wait_for_idle(apps=[APP_NAME], status="active", timeout=300)
+    juju.config(APP_NAME, {"probes_file": yaml.dump(BLACKBOX_PROBES)})
+    juju.wait(lambda status: jubilant.all_active(status, APP_NAME), timeout=300)
 
 
-@pytest.mark.setup
+@pytest.mark.juju_setup
 @pytest.mark.abort_on_fail
-async def test_integrate(ops_test: OpsTest):
+def test_integrate(juju: jubilant.Juju):
     """Integrate apps before enabling service mesh."""
-    assert ops_test.model is not None
+    juju.integrate(f"{APP_NAME}:self-metrics-endpoint", "prometheus")
+    juju.integrate(f"{APP_NAME}:ingress", "istio-ingress:ingress")
 
-    await ops_test.model.integrate(f"{APP_NAME}:self-metrics-endpoint", "prometheus")
-    await ops_test.model.integrate(f"{APP_NAME}:ingress", "istio-ingress:ingress")
-
-    await ops_test.model.wait_for_idle(
-        apps=[
+    juju.wait(
+        lambda status: jubilant.all_active(
+            status,
             APP_NAME,
             "prometheus",
             "istio-ingress",
-        ],
-        status="active",
+        ),
         timeout=1000,
     )
 
 
-@pytest.mark.setup
+@pytest.mark.juju_setup
 @pytest.mark.abort_on_fail
-async def test_scale_up(ops_test: OpsTest):
+def test_scale_up(juju: jubilant.Juju):
     """Scale up the blackbox-exporter charm to multiple units."""
-    assert ops_test.model is not None
+    juju.add_unit(APP_NAME, num_units=2)
 
-    app = ops_test.model.applications[APP_NAME]
-    await app.scale(3)
-
-    await ops_test.model.wait_for_idle(
-        apps=[APP_NAME],
-        status="active",
+    juju.wait(
+        lambda status: (
+            jubilant.all_active(status, APP_NAME) and len(status.apps[APP_NAME].units) == 3
+        ),
         timeout=1000,
-        wait_for_exact_units=3,
     )
 
 
-@pytest.mark.setup
+@pytest.mark.juju_setup
 @pytest.mark.abort_on_fail
-async def test_enable_service_mesh(ops_test: OpsTest):
+def test_enable_service_mesh(juju: jubilant.Juju):
     """Enable service mesh.
 
     This is not done in the previous step for two reasons:
@@ -302,36 +289,33 @@ async def test_enable_service_mesh(ops_test: OpsTest):
     2. The `service_mesh` helper provides a way to parametrize and run existing tests
        with service mesh enabled.
     """
-    await service_mesh(
+    service_mesh(
         enable=True,
-        ops_test=ops_test,
+        juju=juju,
         beacon_app_name="istio-beacon",
         apps_to_be_related_with_beacon=[APP_NAME],
     )
 
 
-async def test_ingress(ops_test: OpsTest):
+def test_ingress(juju: jubilant.Juju):
     """Check the ingress integration by checking if blackbox is reachable through istio-ingress."""
-    assert ops_test.model is not None
-    metrics = await get_ingress_metrics(ops_test)
+    metrics = get_ingress_metrics(juju)
     assert "blackbox_exporter_build_info" in metrics, "Expected blackbox metrics not found"
 
 
 @pytest.mark.abort_on_fail
-async def test_metrics_endpoint_all_units(ops_test: OpsTest):
+def test_metrics_endpoint_all_units(juju: jubilant.Juju):
     """Check that all blackbox units appear in Prometheus scrape targets when mesh is enabled."""
-    assert ops_test.model is not None
-
     # Wait for Prometheus to scrape the targets
     time.sleep(60)
 
     # Get all blackbox unit addresses from the model
-    app = ops_test.model.applications[APP_NAME]
-    expected_unit_count = len(app.units)
+    status = juju.status()
+    expected_unit_count = len(status.apps[APP_NAME].units)
     assert expected_unit_count == 3, f"Expected 3 units, got {expected_unit_count}"
 
     # Query Prometheus for targets
-    targets_data = await get_prometheus_targets(ops_test, "prometheus")
+    targets_data = get_prometheus_targets(juju, "prometheus")
     blackbox_targets = get_blackbox_targets_from_prometheus(targets_data)
 
     # Check that we have targets for all units
@@ -347,18 +331,16 @@ async def test_metrics_endpoint_all_units(ops_test: OpsTest):
     logger.info(f"All {len(blackbox_targets)} blackbox-exporter targets are healthy in Prometheus")
 
 
-async def test_probes_all_units(ops_test: OpsTest):
+def test_probes_all_units(juju: jubilant.Juju):
     """Check that blackbox probes work on all units when service mesh is enabled."""
-    assert ops_test.model is not None
-
-    app = ops_test.model.applications[APP_NAME]
-    expected_unit_count = len(app.units)
+    status = juju.status()
+    expected_unit_count = len(status.apps[APP_NAME].units)
 
     # Test that each unit can execute probes
     for unit_num in range(expected_unit_count):
         # Test probing an external target (prometheus.io)
-        result = await can_blackbox_probe(
-            ops_test,
+        result = can_blackbox_probe(
+            juju,
             APP_NAME,
             unit_num,
             target="http://prometheus.io",

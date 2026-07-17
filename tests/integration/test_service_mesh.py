@@ -11,6 +11,7 @@ import urllib.request
 from pathlib import Path
 from typing import Any, Dict, List, Set
 
+import jubilant
 import pytest
 import yaml
 from helpers import can_blackbox_probe, get_unit_address
@@ -172,39 +173,40 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
     """Build and deploy the charm together with Istio service mesh components."""
     assert ops_test.model is not None
 
+    juju = Juju()
+
     # Deploy non-istio apps
-    await ops_test.model.deploy(
-        charm_under_test,
-        application_name=APP_NAME,
+    juju.deploy(
+        str(charm_under_test),
+        app=APP_NAME,
         resources=RESOURCES,
         trust=True,
     )
-    await ops_test.model.deploy(
+    juju.deploy(
         "prometheus-k8s",
-        application_name="prometheus",
+        "prometheus",
         channel="dev/edge",
         trust=True,
     )
 
     # Deploy istio-k8s first and wait for it to be ready before deploying
     # istio-beacon and istio-ingress which depend on it
-    juju = Juju()
     model_info = juju.show_model()
     istio_config = {} if model_info.cloud == "microk8s" else {"platform": ""}
 
-    await ops_test.model.deploy(
+    juju.deploy(
         "istio-k8s",
-        application_name="istio",
+        "istio",
         channel="dev/edge",
         trust=True,
         config=istio_config,
     )
 
     # Wait for istio to be active before deploying dependent charms
-    await ops_test.model.wait_for_idle(
-        apps=["istio"],
-        status="active",
+    juju.wait(
+        lambda status: status.apps["istio"].is_active,
         timeout=600,
+        delay=5.0,
     )
 
     # Now deploy the charms that depend on istio control plane
@@ -222,33 +224,28 @@ async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
     )
 
     # First attempt - allow errors since istio components may need retries
-    await ops_test.model.wait_for_idle(
-        apps=[
-            APP_NAME,
-            "prometheus",
-            "istio",
-            "istio-beacon",
-            "istio-ingress",
-        ],
-        status="active",
+    juju.wait(
+        jubilant.all_agents_idle,
         timeout=600,
-        raise_on_error=False,
+        delay=15.0,
     )
 
     # Resolve any units in error state and retry
     await resolve_units_in_error(ops_test)
 
     # Final wait for all apps to be active
-    await ops_test.model.wait_for_idle(
-        apps=[
+    juju.wait(
+        lambda status: jubilant.all_active(
+            status,
             APP_NAME,
             "prometheus",
             "istio",
             "istio-beacon",
             "istio-ingress",
-        ],
-        status="active",
+        ),
+        error=jubilant.any_error,
         timeout=600,
+        delay=15.0,
     )
 
     # Configure blackbox probes

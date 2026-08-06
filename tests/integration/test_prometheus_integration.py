@@ -66,5 +66,5 @@ def test_integrate_prometheus(juju: jubilant.Juju):
         lambda status: jubilant.all_active(status, app_name, "prometheus"),
         timeout=1000,
     )
-    time.sleep(60)  # wait for the 1m scrape time
+    time.sleep(60 * 2)  # ensure the 1m scrape interval elapses
     assert all_prometheus_targets_up(juju, "prometheus")

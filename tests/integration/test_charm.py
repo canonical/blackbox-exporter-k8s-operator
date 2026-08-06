@@ -52,7 +52,11 @@ def test_probe_endpoint(juju: jubilant.Juju):
 @pytest.mark.abort_on_fail
 def test_integrate_traefik(juju: jubilant.Juju):
     juju.integrate(f"{app_name}:ingress", "traefik")
-    juju.wait(lambda status: jubilant.all_active(status, app_name, "traefik"))
+    juju.wait(
+        lambda status: jubilant.all_active(status, app_name, "traefik"),
+        delay=15,
+        successes=3,
+    )
 
 
 @pytest.mark.abort_on_fail

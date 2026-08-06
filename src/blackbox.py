@@ -194,16 +194,20 @@ class WorkloadManager(Object):
         """
         if not self.is_ready:
             raise ContainerNotReady("cannot update config")
+        config_key = "config_file"
         logger.debug("applying config changes")
-        config = cast(str, self.model.config.get("config_file"))
+        config = cast(str, self.model.config.get(config_key))
         # If no config file is defined, set the default one
         if not config:
             return self._default_config
         # If a config file is specified, do basic config validation: valid yaml
         try:
             provided_config = yaml.safe_load(config)
-        except yaml.YAMLError as e:
-            logger.error("Failed to load the configuration; invalid YAML: %s %s", config, str(e))
+        except yaml.YAMLError:
+            logger.error(
+                "Failed to load the configuration from charm config option '%s'; invalid YAML",
+                config_key,
+            )
             raise ConfigUpdateFailure("Failed to load config; invalid YAML")
         return provided_config
 

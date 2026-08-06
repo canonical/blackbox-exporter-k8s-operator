@@ -1,4 +1,5 @@
 # Blackbox Exporter Operator (k8s)
+
 [![Charmhub Badge](https://charmhub.io/blackbox-exporter-k8s/badge.svg)](https://charmhub.io/blackbox-exporter-k8s)
 [![Release](https://github.com/canonical/blackbox-exporter-k8s-operator/actions/workflows/release.yaml/badge.svg)](https://github.com/canonical/blackbox-exporter-k8s-operator/actions/workflows/release.yaml)
 [![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)
@@ -17,7 +18,6 @@ self-monitoring.
 [Prometheus operator]: https://charmhub.io/prometheus-k8s
 [Blackbox Exporter operator]: https://charmhub.io/blackbox-exporter-k8s
 
-
 ## Getting started
 
 ### Basic deployment
@@ -26,7 +26,7 @@ Once you have a controller and model ready, you can deploy the blackbox exporter
 using the Juju CLI:
 
 ```shell
-juju deploy --channel=beta blackbox-exporter-k8s
+juju deploy --channel=dev/edge blackbox-exporter-k8s
 ```
 
 The available [channels](https://snapcraft.io/docs/channels) are listed at the top
@@ -48,7 +48,6 @@ Once the Charmed Operator is deployed, the status can be checked by running:
 ```shell
 juju status --relations --storage --color
 ```
-
 
 ### Configuration
 
@@ -74,7 +73,7 @@ To configure the actual probes, there first needs to be a Prometheus relation:
 juju relate blackbox-exporter-k8s prometheus
 ```
 
-Then, the probes configuration should be written to a file (following the 
+Then, the probes configuration should be written to a file (following the
 [Blackbox Exporter docs](https://github.com/prometheus/blackbox_exporter#prometheus-configuration)
 ) and passed via `juju config`:
 
@@ -98,7 +97,7 @@ requires:
 ```
 
 The custom probes provided via relation data are merged with the probes defined in the juju config `probes_file` parameter.
-The modules custom defined modules are instead integrated with the modules defined in the juju config `blackbox-config` parameter.
+custom defined modules are instead integrated with the modules defined in the juju config `config_file` parameter.
 In order for the charm defined probes to be probed via this charm all that is required is to relate the two charms with:
 
 ```shell
@@ -108,10 +107,12 @@ juju relate <charm> blackbox:probes
 Charms that seek to provide probes for Blackbox Exporter, can do so using the provided blackbox_exporter_probes charm library. This library ensures that probes and modules defined by a charm are forwarded correctly to Prometheus, and the metrics displayed in the associated Grafana Dashboard.
 
 ## OCI Images
+
 This charm is published on Charmhub with blackbox exporter images from
 the official [quay.io/prometheus/blackbox-exporter].
 
 [quay.io/prometheus/blackbox-exporter]: https://quay.io/repository/prometheus/blackbox-exporter?tab=tags
 
 ## Additional Information
+
 - [Blackbox Exporter README](https://github.com/prometheus/blackbox-exporter)

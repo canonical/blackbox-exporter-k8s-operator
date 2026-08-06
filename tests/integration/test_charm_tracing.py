@@ -48,7 +48,7 @@ def charm_under_test() -> str:
     return charm
 
 
-@pytest.mark.setup
+@pytest.mark.juju_setup
 @pytest.mark.abort_on_fail
 def test_deploy_blackbox_and_tempo(juju: Juju, charm_under_test: str) -> None:
     """Deploy blackbox + monolithic Tempo cluster, then integrate charm-tracing."""

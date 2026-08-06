@@ -10,15 +10,14 @@
 4. Scales down the application to below the leader unit, to trigger a leadership change event
 """
 
-import asyncio
 import logging
 from pathlib import Path
 
+import jubilant
 import pytest
 import requests
 import yaml
 from helpers import can_blackbox_probe, get_traefik_proxied_endpoints, is_blackbox_up
-from pytest_operator.plugin import OpsTest
 
 logger = logging.getLogger(__name__)
 
@@ -29,51 +28,41 @@ resources = {
 }
 
 
-@pytest.mark.setup
+@pytest.mark.juju_setup
 @pytest.mark.abort_on_fail
-async def test_build_and_deploy(ops_test: OpsTest, charm_under_test):
+def test_build_and_deploy(juju: jubilant.Juju, charm_under_test: str):
     """Build the charm-under-test and deploy it together with related charms.
 
     Assert on the unit status before any relations/configurations take place.
     """
-    assert ops_test.model
     # deploy charm from local source folder
-    await asyncio.gather(
-        ops_test.model.deploy(
-            charm_under_test, resources=resources, application_name=app_name, trust=True
-        ),
-        ops_test.model.deploy("traefik-k8s", "traefik", channel="latest/candidate", trust=True),
-    )
-    await ops_test.model.wait_for_idle(apps=[app_name], status="active", timeout=1000)
-    assert ops_test.model.applications[app_name].units[0].workload_status == "active"
-    assert await is_blackbox_up(ops_test, app_name)
+    juju.deploy(charm_under_test, app=app_name, resources=resources, trust=True)
+    juju.deploy("traefik-k8s", "traefik", channel="latest/candidate", trust=True)
+    juju.wait(jubilant.all_active, timeout=1000)
+    assert juju.status().apps[app_name].units[f"{app_name}/0"].workload_status.current == "active"
+    assert is_blackbox_up(juju, app_name)
 
 
 @pytest.mark.abort_on_fail
-async def test_probe_endpoint(ops_test: OpsTest):
-    assert await can_blackbox_probe(ops_test, app_name, 0)
+def test_probe_endpoint(juju: jubilant.Juju):
+    assert can_blackbox_probe(juju, app_name, 0)
 
 
-@pytest.mark.setup
+@pytest.mark.juju_setup
 @pytest.mark.abort_on_fail
-async def test_integrate_traefik(ops_test: OpsTest):
-    assert ops_test.model is not None
-    await ops_test.model.integrate(f"{app_name}:ingress", "traefik")
-
-    await ops_test.model.wait_for_idle(
-        apps=[
-            app_name,
-            "traefik",
-        ],
-        status="active",
+def test_integrate_traefik(juju: jubilant.Juju):
+    juju.integrate(f"{app_name}:ingress", "traefik")
+    juju.wait(
+        lambda status: jubilant.all_active(status, app_name, "traefik"),
+        delay=15,
+        successes=3,
     )
 
 
 @pytest.mark.abort_on_fail
-async def test_traefik(ops_test: OpsTest):
+def test_traefik(juju: jubilant.Juju):
     """Check the ingress integration, by checking if blackbox is reachable through Traefik."""
-    assert ops_test.model is not None
-    proxied_endpoints = await get_traefik_proxied_endpoints(ops_test)
+    proxied_endpoints = get_traefik_proxied_endpoints(juju)
     assert app_name in proxied_endpoints
 
     response = requests.get(f"{proxied_endpoints[app_name]['url']}/metrics")

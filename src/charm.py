@@ -180,10 +180,11 @@ class BlackboxExporterCharm(CharmBase):
 
     def _on_show_config_action(self, event: ActionEvent):
         """Hook for the show-config action."""
-        event.log(f"Fetching {self._config_path}")
         if not self.blackbox_workload.is_ready:
             event.fail("Container not ready")
+            return
         try:
+            event.log(f"Fetching {self._config_path}")
             content = self.container.pull(self._config_path)
             event.set_results(
                 {
@@ -259,7 +260,7 @@ class BlackboxExporterCharm(CharmBase):
         external_url = urlparse(self._external_url)
         metrics_path = f"{external_url.path.rstrip('/')}/metrics"
         target = (
-            f"{external_url.hostname}{':'+str(external_url.port) if external_url.port else ''}"
+            f"{external_url.hostname}{':' + str(external_url.port) if external_url.port else ''}"
         )
         job = {
             "metrics_path": metrics_path,

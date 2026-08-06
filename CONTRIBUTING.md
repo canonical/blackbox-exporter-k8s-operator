@@ -1,4 +1,5 @@
 # Contributing to blackbox-exporter-k8s
+
 ![GitHub](https://img.shields.io/github/license/canonical/blackbox-exporter-k8s-operator)
 ![GitHub commit activity](https://img.shields.io/github/commit-activity/y/canonical/blackbox-exporter-k8s-operator)
 ![GitHub](https://img.shields.io/tokei/lines/github/canonical/blackbox-exporter-k8s-operator)
@@ -13,12 +14,10 @@ contributing enhancements or bug fixing to the Blackbox Exporter Charmed Operato
 The intended use case of this operator is to be deployed as part of the
 [COS Lite] bundle, although that is not necessary.
 
-
 ## Setup
 
 A typical setup using [snaps](https://snapcraft.io/) can be found in the
 [Juju docs](https://juju.is/docs/sdk/dev-setup).
-
 
 ## Developing
 
@@ -38,8 +37,8 @@ A typical setup using [snaps](https://snapcraft.io/) can be found in the
 - We use [`tox`](https://tox.wiki/en/latest/#) to manage all virtualenvs for
   the development lifecycle.
 
-
 ### Testing
+
 Unit tests are written with the Operator Framework [test harness] and
 integration tests are written using [pytest-operator] and [python-libjuju].
 
@@ -53,7 +52,6 @@ tox -e fmt              # update your code according to linting rules
 tox -e lint             # code style
 tox -e static           # static analysis
 tox -e unit             # unit tests
-tox -e scenario         # scenario tests
 tox -e integration      # integration tests
 ```
 
@@ -63,7 +61,6 @@ tox -e integration      # integration tests
 ```shell
 source .tox/unit/bin/activate
 ```
-
 
 ## Build charm
 
@@ -81,8 +78,8 @@ juju deploy ./blackbox-exporter-k8s.charm \
   --config config_file='@path/to/blackbox-exporter.yaml'
 ```
 
-
 ## Design choices
+
 - The `config.yaml` config file is created in its entirety by the charm
   code on startup. This is done to maintain consistency across OCI images.
 

@@ -1,20 +1,130 @@
-# Terraform module for blackbox-exporter-k8s
+# Blackbox Exporter Operator (k8s)
 
-This is a Terraform module facilitating the deployment of blackbox-exporter-k8s charm, using the [Terraform juju provider](https://github.com/juju/terraform-provider-juju/). For more information, refer to the provider [documentation](https://registry.terraform.io/providers/juju/juju/latest/docs).
+[![Charmhub Badge](https://charmhub.io/blackbox-exporter-k8s/badge.svg)](https://charmhub.io/blackbox-exporter-k8s)
+[![Release](https://github.com/canonical/blackbox-exporter-k8s-operator/actions/workflows/release.yaml/badge.svg)](https://github.com/canonical/blackbox-exporter-k8s-operator/actions/workflows/release.yaml)
+[![Discourse Status](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.charmhub.io&style=flat&label=CharmHub%20Discourse)](https://discourse.charmhub.io)
+
+[Charmed Blackbox Exporter (blackbox-exporter-k8s)][Blackbox Exporter operator] is a charm for
+[Blackbox Exporter].
+
+The charm imposes configurable resource limits on the workload, can be readily
+integrated with [prometheus][Prometheus operator], [grafana][Grafana operator]
+and [loki][Loki operator], and it comes with built-in alert rules and dashboards for
+self-monitoring.
+
+[Blackbox Exporter]: https://github.com/prometheus/blackbox_exporter
+[Grafana operator]: https://charmhub.io/grafana-k8s
+[Loki operator]: https://charmhub.io/loki-k8s
+[Prometheus operator]: https://charmhub.io/prometheus-k8s
+[Blackbox Exporter operator]: https://charmhub.io/blackbox-exporter-k8s
+
+## Getting started
+
+### Basic deployment
+
+Once you have a controller and model ready, you can deploy the blackbox exporter
+using the Juju CLI:
+
+```shell
+juju deploy --channel=dev/edge blackbox-exporter-k8s
+```
+
+The available [channels](https://snapcraft.io/docs/channels) are listed at the top
+of [the page](https://charmhub.io/blackbox-exporter-k8s) and can also be retrieved with
+Charmcraft CLI:
+
+```shell
+$ charmcraft status blackbox-exporter-k8s
+
+Track    Base                  Channel    Version    Revision    Resources
+latest   ubuntu 22.04 (amd64)  stable     -          -           -
+                               candidate  -          -           -
+                               beta       1          1           blackbox-exporter-image (r1)
+                               edge       1          1           blackbox-exporter-image (r1)
+```
+
+Once the Charmed Operator is deployed, the status can be checked by running:
+
+```shell
+juju status --relations --storage --color
+```
+
+### Configuration
+
+In order to configure the Blackbox Exporter, a [configuration file](https://github.com/prometheus/blackbox_exporter/blob/master/CONFIGURATION.md)
+should be provided using the
+[`config_file`](https://charmhub.io/blackbox-exporter-k8s/configure#config_file) option:
+
+```shell
+juju config blackbox-exporter-k8s \
+  config_file='@path/to/blackbox.yml'
+```
+
+To verify Blackbox Exporter is using the expected configuration you can use the
+[`show-config`](https://charmhub.io/blackbox-exporter-k8s/actions#show-config) action:
+
+```shell
+juju run blackbox-exporter-k8s/0 show-config
+```
+
+To configure the actual probes, there first needs to be a Prometheus relation:
+
+```shell
+juju relate blackbox-exporter-k8s prometheus
+```
+
+Then, the probes configuration should be written to a file (following the
+[Blackbox Exporter docs](https://github.com/prometheus/blackbox_exporter#prometheus-configuration)
+) and passed via `juju config`:
+
+```shell
+juju config blackbox-exporter-k8s \
+  probes_file='@path/to/probes.yml'
+```
+
+Note that the `relabel_configs` of each scrape job doesn't need to be specified, and will be
+overridden by the charm with the needed labels and the correct Blackbox Exporter url.
+
+#### Dynamic Configuration
+
+The list of probes and the list of modules for probing can also be changed dynamically from other charms.
+This charm offers a relation to allow charms to forward custom probes spec to Blackbox Exporter. Those are exported over the probes relation using the blackbox_exporter_probes interface:
+
+```shell
+requires:
+  probes:
+    interface: blackbox_exporter_probes
+```
+
+The custom probes provided via relation data are merged with the probes defined in the juju config `probes_file` parameter.
+custom defined modules are instead integrated with the modules defined in the juju config `config_file` parameter.
+In order for the charm defined probes to be probed via this charm all that is required is to relate the two charms with:
+
+```shell
+juju relate <charm> blackbox:probes
+```
+
+Charms that seek to provide probes for Blackbox Exporter, can do so using the provided blackbox_exporter_probes charm library. This library ensures that probes and modules defined by a charm are forwarded correctly to Prometheus, and the metrics displayed in the associated Grafana Dashboard.
+
+## OCI Images
+
+This charm is published on Charmhub with blackbox exporter images from
+the official [quay.io/prometheus/blackbox-exporter].
+
+[quay.io/prometheus/blackbox-exporter]: https://quay.io/repository/prometheus/blackbox-exporter?tab=tags
+
+## Additional Information
+
+- [Blackbox Exporter README](https://github.com/prometheus/blackbox-exporter)
 
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
-| Name | Version |
-|------|---------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5 |
-| <a name="requirement_juju"></a> [juju](#requirement\_juju) | ~> 1.0 |
+No requirements.
 
 ## Providers
 
-| Name | Version |
-|------|---------|
-| <a name="provider_juju"></a> [juju](#provider\_juju) | ~> 1.0 |
+No providers.
 
 ## Modules
 
@@ -22,22 +132,9 @@ No modules.
 
 ## Inputs
 
-| Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
-| <a name="input_app_name"></a> [app\_name](#input\_app\_name) | Name to give the deployed application | `string` | `"blackbox-exporter"` | no |
-| <a name="input_base"></a> [base](#input\_base) | The operating system on which to deploy. E.g. ubuntu@26.04. Check Charmhub for per-charm base support. | `string` | `"ubuntu@26.04"` | no |
-| <a name="input_channel"></a> [channel](#input\_channel) | Channel that the charm is deployed from | `string` | n/a | yes |
-| <a name="input_config"></a> [config](#input\_config) | Map of the charm configuration options | `map(string)` | `{}` | no |
-| <a name="input_constraints"></a> [constraints](#input\_constraints) | String listing constraints for this application | `string` | `"arch=amd64"` | no |
-| <a name="input_model_uuid"></a> [model\_uuid](#input\_model\_uuid) | Reference to an existing model resource or data source for the model to deploy to | `string` | n/a | yes |
-| <a name="input_revision"></a> [revision](#input\_revision) | Revision number of the charm | `number` | `null` | no |
-| <a name="input_units"></a> [units](#input\_units) | Unit count/scale | `number` | `1` | no |
+No inputs.
 
 ## Outputs
 
-| Name | Description |
-|------|-------------|
-| <a name="output_app_name"></a> [app\_name](#output\_app\_name) | n/a |
-| <a name="output_provides"></a> [provides](#output\_provides) | n/a |
-| <a name="output_requires"></a> [requires](#output\_requires) | n/a |
+No outputs.
 <!-- END_TF_DOCS -->

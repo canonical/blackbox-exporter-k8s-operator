@@ -65,7 +65,7 @@ To verify Blackbox Exporter is using the expected configuration you can use the
 [`show-config`](https://charmhub.io/blackbox-exporter-k8s/actions#show-config) action:
 
 ```shell
-juju run-action blackbox-exporter-k8s/0 show-config --wait
+juju run blackbox-exporter-k8s/0 show-config
 ```
 
 To configure the actual probes, there first needs to be a Prometheus relation:

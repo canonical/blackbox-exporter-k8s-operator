@@ -25,6 +25,8 @@ Changes on `track/0.28` since the common ancestor with `track/2` (`535dcf2`).
 
 ## Others
 
+- chore: update terraform-docs ([c05d3df](https://github.com/canonical/blackbox-exporter-k8s-operator/commit/c05d3df5309cd057fff216901f1a71e677aa3611))
+- chore(blueprints): refresh charms.just ([f457619](https://github.com/canonical/blackbox-exporter-k8s-operator/commit/f457619cb088ede4d3429c105d5638f9c2a84d96))
 - chore: refresh charms.just from canonical/observability ([9f90469](https://github.com/canonical/blackbox-exporter-k8s-operator/commit/9f9046937835cdf665e7745c6ca876365d804896))
 - test: fix import order for xfail marker ([ff4c937](https://github.com/canonical/blackbox-exporter-k8s-operator/commit/ff4c93763723893d7b8744cd10ce3a952b32d96b))
 - test: xfail service mesh integration tests ([f1167ba](https://github.com/canonical/blackbox-exporter-k8s-operator/commit/f1167ba93e855b881a8f89c85f0b1e7cbb923033))

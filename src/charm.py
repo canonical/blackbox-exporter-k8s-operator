@@ -140,18 +140,7 @@ class BlackboxExporterCharm(CharmBase):
         self.framework.observe(self.ingress.on.ready, self._handle_ingress)
         self.framework.observe(self.ingress.on.revoked, self._handle_ingress)
 
-        self.catalog = CatalogueConsumer(
-            charm=self,
-            item=CatalogueItem(
-                name="Blackbox Exporter",
-                url=self._external_url + "/",
-                icon="box-variant",
-                description=(
-                    "Blackbox exporter allows blackbox probing of endpoints over a multitude of "
-                    "protocols, including HTTP, HTTPS, DNS, TCP, ICMP and gRPC."
-                ),
-            ),
-        )
+        self.catalog = CatalogueConsumer(charm=self, item=self._catalogue_item)
 
         self.charm_tracing = ops_tracing.Tracing(
             self,
@@ -239,7 +228,22 @@ class BlackboxExporterCharm(CharmBase):
         # Reload or restart the service
         self.blackbox_workload.reload()
 
+        self.catalog.update_item(item=self._catalogue_item)
+
         self.unit.status = ActiveStatus()
+
+    @property
+    def _catalogue_item(self) -> CatalogueItem:
+        """Return the catalogue item for this charm."""
+        return CatalogueItem(
+            name="Blackbox Exporter",
+            url=self._external_url + "/",
+            icon="box-variant",
+            description=(
+                "Blackbox exporter allows blackbox probing of endpoints over a multitude of "
+                "protocols, including HTTP, HTTPS, DNS, TCP, ICMP and gRPC."
+            ),
+        )
 
     @property
     def _internal_url(self) -> str:
